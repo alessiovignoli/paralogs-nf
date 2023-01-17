@@ -3,10 +3,10 @@
 nextflow.enable.dsl=2
 
 //include { data_preparation } from './modules/data_preparation.nf'
-include { extract_fasta_per_species; run_alns; concatenate_alns} from './modules/supermatrix_and_supertree.nf'
+include { extract_fasta_per_species; run_alns; concatenate_alns; concatenate_alns as concatenate_struct_alns } from './modules/supermatrix_and_supertree.nf'
 include { extract_fasta_aln_per_species_sim; concatenate_alns_sim} from './modules/supermatrix_and_supertree_sim.nf'
-include {split_multi_fasta; run_alphafold2} from './modules/run_af2.nf'
-include {run_struct_ref} from './modules/run_struct_aln.nf'
+include {run_colabfold; split_multi_fasta; run_alphafold2} from './modules/run_struct_model.nf'
+include {run_struct_aln} from './modules/run_struct_aln.nf'
 
 params.data = 'pfam'
 
@@ -20,13 +20,14 @@ if (params.input_fasta) {
 	.set{in_fasta}
 }*/
 
+params.db = "/users/cn/abaltzis/db/colabfolddb"
 params.ref = "MOUSE"
-params.species_num = 7
+params.species_num = 6
 params.mode = 'tcoffee'
 params.orthologs_ids = "PF*/PF*.orthologs_org_ids_to_concatenate"
 params.fasta = "PF*/PF*_domain_sequences_intersect_with_ref_after_OMA.fasta"
 params.intersecting_genes = "PF*/PF*.intersecting_genes"
-params.AF2 = "PF*/results/AF2/*.pdb"
+//params.AF2 = "PF*/results/AF2/*.pdb"
 
 
 if (params.fasta) {
@@ -36,11 +37,11 @@ if (params.fasta) {
 	.groupTuple()
 	.set{grouped_fasta}
 
-        Channel
-        .fromPath(params.fasta)
-        .filter(~/.*${params.ref}_domain_sequences_intersect.*/)
-        .map { it -> [it.baseName.toString().split("\\.")[0],it]}
-        .set{fasta_for_af2}
+        //Channel
+        //.fromPath(params.fasta)
+        //.filter(~/.*${params.ref}_domain_sequences_intersect.*/)
+        //.map { it -> [it.baseName.toString().split("\\.")[0],it]}
+        //.set{fasta_for_af2}
 }
 if (params.intersecting_genes) {
         Channel
@@ -55,7 +56,7 @@ if (params.orthologs_ids) {
         .set{ortho}
 }
 intersect.combine(ortho,by:0).combine(grouped_fasta,by:0).set{input_fasta}
-Channel.fromPath(params.AF2).map { it -> [it.toString().split('\\/')[-4],it]}.groupTuple().set{af2_models}
+//Channel.fromPath(params.AF2).map { it -> [it.toString().split('\\/')[-4],it]}.groupTuple().set{af2_models}
 
 
 
@@ -91,13 +92,14 @@ Input species names		                : ${params.orthologs_ids_sim}
 workflow pfam_data_with_AF2 {
         extract_fasta_per_species(input_fasta,params.mode)
         extract_fasta_per_species.out.transpose().set{aln_input}
+        //run_colabfold(aln_input,params.db)
         run_alns(aln_input,params.mode)
-        run_alns.out.aln_output.groupTuple().set{alns_grouped}
+        run_alns.out.aln_output.filter(~/^((?!MOUSE_domain).)*$/).groupTuple().set{alns_grouped}
         concatenate_alns(alns_grouped,params.mode,params.species_num)
-        split_multi_fasta(fasta_for_af2)
-        run_alphafold2(split_multi_fasta.out.transpose())
-        extract_fasta_per_species.out.transpose().filter(~/.*${params.ref}_domain_sequences_after_intersection.*/).combine(run_alphafold2.out.af2_models.groupTuple(), by: 0).combine(run_alns.out.code_name.groupTuple().map{it -> [it[0], it[1][0]]}, by:0).set{struct_ref_input}
-        run_struct_ref(struct_ref_input,params.ref)
+        //run_colabfold.out.colabfold_models.combine(run_alns.out.code_name.groupTuple().map{it -> [it[0], it[1][0]]}, by:0).set{struct_aln_input}
+        //run_struct_aln(struct_aln_input)
+        //run_struct_aln.out.struct_aln_output.groupTuple().set{struct_alns_grouped}
+        //concatenate_struct_alns(struct_alns_grouped,'3DCoffee',params.species_num)
 }
 
 workflow pfam_data_without_AF2 {
@@ -117,12 +119,12 @@ workflow simulated_data {
 
 workflow {
         if (params.data == 'pfam')
-                pfam_data_without_AF2()
+                pfam_data_with_AF2()
         else
                 simulated_data()
 }
 
 workflow.onComplete {
-    println "Pipeline completed at: $workflow.complete"
-    println "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+        println "Pipeline completed at: $workflow.complete"
+        println "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
 }

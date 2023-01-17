@@ -50,12 +50,12 @@ foreach $i (@org_ids)
 	{
 		foreach $m (@gene_ids)
 		{
- 			while ($line = <IN>)
+			while ($line = <IN>)
 			{
 				chomp ($line);
 				if ( $line =~ /^$m\n/ )
- 				{
- 					if ($i ne 'HUMAN' ) {$line =~ s/$m\n/$m\_$i\n/;}
+				{
+					if ($i ne 'HUMAN' ) {$line =~ s/$m\n/$m\_$i\n/;}
 					print OUT ">$line";
 					last;
 				}
@@ -71,7 +71,7 @@ foreach $i (@org_ids)
 			{
 				chomp $line;
 				if ( $line =~ /^$m\n/ )
- 				{
+				{
 					print OUT ">$line";
 					last;
 				}

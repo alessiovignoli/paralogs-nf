@@ -18,6 +18,7 @@ process extract_fasta_aln_per_species_sim {
 
 	"""
 	extract_seq_per_species_sim.pl ${orthologs_ids} ${init_aln}
+	for fasta in `find *.fasta_aln -maxdepth 0 -type f | grep -v "Guinea_Pig"`; do cp "${fam}".ma_Guinea_Pig.fasta_aln \$fasta; done
 	"""
 
 }

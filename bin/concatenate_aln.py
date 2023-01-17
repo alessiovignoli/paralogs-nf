@@ -121,7 +121,7 @@ if args.conc==True:
 					conc_aln = np.column_stack((conc_aln,align_array[col_index[j],:]))
 			for z in range(nor_avg_len[i-1],nor_avg_len[i]):
 				if z == nor_avg_len[i-1]:
-                	                conc_aln_unit = align_array[col_index[z],:]
+					conc_aln_unit = align_array[col_index[z],:]
 				else:
 					conc_aln_unit = np.column_stack((conc_aln_unit,align_array[col_index[z],:]))
 			np_alns_list.append(conc_aln_unit)
