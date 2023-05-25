@@ -3,12 +3,12 @@
 nextflow.enable.dsl=2
 
 //include { data_preparation } from './modules/data_preparation.nf'
-include { extract_fasta_per_species; run_alns; concatenate_alns; concatenate_alns as concatenate_struct_alns } from './modules/supermatrix_and_supertree.nf'
-include { extract_fasta_aln_per_species_sim; concatenate_alns_sim} from './modules/supermatrix_and_supertree_sim.nf'
+include { extract_fasta_per_species; extract_fasta_per_species_for_full_aln; run_alns; run_full_alns; run_phylo_full; concatenate_alns; concatenate_alns as concatenate_struct_alns } from './modules/supermatrix_and_supertree.nf'
+include { extract_fasta_aln_per_species_sim; extract_fasta_aln_per_species_sim_for_full_aln; concatenate_alns_sim; run_phylo_ML_full_sim as run_phylo_ML_full_aln_sim; run_phylo_ML_full_sim as run_phylo_ML_supermatrix_aln_sim; run_phylo_ME_full_sim as run_phylo_ME_full_aln_sim; run_phylo_ME_full_sim as run_phylo_ME_supermatrix_aln_sim; only_concatenate_aln_sim} from './modules/supermatrix_and_supertree_sim.nf'
 include {run_colabfold; split_multi_fasta; run_alphafold2} from './modules/run_struct_model.nf'
 include {run_struct_aln} from './modules/run_struct_aln.nf'
 
-params.data = 'pfam'
+params.data = 'sim'
 
 // data preparation inputs
 /*
@@ -92,11 +92,17 @@ Input species names		                : ${params.orthologs_ids_sim}
 workflow pfam_data_with_AF2 {
         extract_fasta_per_species(input_fasta,params.mode)
         extract_fasta_per_species.out.transpose().set{aln_input}
-        //run_colabfold(aln_input,params.db)
+        extract_fasta_per_species_for_full_aln(input_fasta,params.mode)
+
+                //run_colabfold(aln_input,params.db)
         run_alns(aln_input,params.mode)
-        run_alns.out.aln_output.filter(~/^((?!MOUSE_domain).)*$/).groupTuple().set{alns_grouped}
-        concatenate_alns(alns_grouped,params.mode,params.species_num)
-        //run_colabfold.out.colabfold_models.combine(run_alns.out.code_name.groupTuple().map{it -> [it[0], it[1][0]]}, by:0).set{struct_aln_input}
+        extract_fasta_per_species_for_full_aln.out.combine(run_alns.out.code_name.groupTuple().map{it -> [it[0], it[1][0]]}, by:0).set{run_full_alns_input}
+        run_full_alns(run_full_alns_input,params.mode)
+        run_phylo_full(run_full_alns.out.full_aln,params.mode)
+        //run_phylo_recon(run_full_alns.out.transpose(),params.mode)
+        //run_alns.out.aln_output.filter(~/^((?!MOUSE_domain).)*$/).groupTuple().set{alns_grouped}
+        //concatenate_alns(alns_grouped,params.mode,params.species_num)
+                //run_colabfold.out.colabfold_models.combine(run_alns.out.code_name.groupTuple().map{it -> [it[0], it[1][0]]}, by:0).set{struct_aln_input}
         //run_struct_aln(struct_aln_input)
         //run_struct_aln.out.struct_aln_output.groupTuple().set{struct_alns_grouped}
         //concatenate_struct_alns(struct_alns_grouped,'3DCoffee',params.species_num)
@@ -113,7 +119,14 @@ workflow pfam_data_without_AF2 {
 }
 
 workflow simulated_data {
+        extract_fasta_aln_per_species_sim_for_full_aln(input_aln_sim.combine(orthologs_ids_sim))
+        run_phylo_ML_full_aln_sim(extract_fasta_aln_per_species_sim_for_full_aln.out.phylip_full_aln_sim)
+        run_phylo_ME_full_aln_sim(extract_fasta_aln_per_species_sim_for_full_aln.out.phylip_full_aln_sim)
+
         extract_fasta_aln_per_species_sim(input_aln_sim.combine(orthologs_ids_sim))
+        only_concatenate_aln_sim(extract_fasta_aln_per_species_sim.out.all_aln_sim)
+        run_phylo_ML_supermatrix_aln_sim(only_concatenate_aln_sim.out.phylip_only_concatenate_aln_sim)
+        run_phylo_ME_supermatrix_aln_sim(only_concatenate_aln_sim.out.phylip_only_concatenate_aln_sim)
         concatenate_alns_sim(extract_fasta_aln_per_species_sim.out.all_aln_sim,params.species_num_sim)
 }
 

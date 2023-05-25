@@ -22,6 +22,27 @@ process extract_fasta_per_species {
         """
 }
 
+process extract_fasta_per_species_for_full_aln {
+	label 'cpu'
+        tag "${fam}"
+        publishDir "${fam}/results_without_mouse_10_samples/${mode}", mode: 'copy'
+
+        input:
+	tuple val(fam), path(intersect), path(species), path(rest)
+        val mode
+
+        output:
+        tuple val(fam), path("${intersect}"), path("${species}"), file("${fam}.domain_sequences_prior_after_intersection.fasta")
+
+	script:
+        """
+
+        extract_intersecting_seq_prior.pl ${intersect} ${species} \$PWD -prior ${fam}
+        cat ${fam}.*_domain_sequences_prior_after_intersection.fasta > ${fam}.domain_sequences_prior_after_intersection.fasta
+
+        """
+}
+
 process run_alns {
 	label 'cpu'
         tag "${fam} - ${mode}"
@@ -47,6 +68,79 @@ process run_alns {
                 template 'ginsi.sh'
         else
                 error "Invalid alignment mode: ${mode}"
+}
+/*
+#split_seq_from_full_aln_based_on_species.pl ${intersect} ${species} ${fam}
+        #for i in `find *_domain_sequences_prior_after_intersection.fasta_aln -maxdepth 0 -type f`; do
+        #        t_coffee -other_pg seq_reformat -code ${code_file} -in \$i > \${i%".fasta_aln"}_coded.fasta_aln        
+        #        t_coffee -other_pg seq_reformat -in \${i%".fasta_aln"}_coded.fasta_aln -output phylip_aln > \${i%".fasta_aln"}_coded.phylip 
+        #done
+*/
+process run_full_alns {
+	label 'cpu'
+        tag "${fam} - ${mode}"
+        publishDir "${fam}/results_without_mouse_10_samples/${mode}", mode: 'copy'
+
+        input:
+        tuple val(fam), path(intersect), path(species), path(fasta), path(code_file)
+        val mode
+
+        output:
+        tuple val(fam), path("*.phylip"), emit: split_aln
+        tuple val(fam), path("${output_alns_phy}"), emit: full_aln
+        path ("full_aln.code_name")
+
+        script:
+        output_alns = fasta.baseName + "_full.fasta_aln"
+        output_alns_coded = fasta.baseName + "_full_coded.fasta_aln"
+        output_alns_phy = fasta.baseName + "_full_coded.phylip"
+
+        """
+        t_coffee ${fasta} -output fasta -outfile ${output_alns} -thread 2
+        t_coffee -other_pg seq_reformat -in ${output_alns} -output code_name > full_aln.code_name
+        t_coffee -other_pg seq_reformat -code full_aln.code_name -in ${output_alns} > ${output_alns_coded}
+        t_coffee -other_pg seq_reformat -in ${output_alns_coded} -output phylip_aln > ${output_alns_phy}
+        """
+}
+
+process run_phylo_full {
+        label 'cpu'
+        tag "${fam}"
+        publishDir "${fam}/results_without_mouse_10_samples/${mode}", mode: 'copy'
+
+        input:
+        tuple val(fam), path(phylip_aln)
+        val mode
+
+        output:
+        path "*"
+
+        script:
+        raxml_output = phylip_aln.baseName + "_raxml.nwk"
+        """
+        raxml -D -m PROTGAMMALG -s ${phylip_aln} -n ${raxml_output} -p 2233
+        fastme -i ${phylip_aln} -p -g 1.0 -s -n
+        """
+}
+
+process run_phylo_recon {
+        label 'cpu'
+        tag "${fam}"
+        publishDir "${fam}/results_without_mouse_10_samples/${mode}", mode: 'copy'
+
+        input:
+        tuple val(fam), path(phylip_aln)
+        val mode
+
+        output:
+        path "*"
+
+        script:
+        raxml_output = phylip_aln.baseName + "_raxml.nwk"
+        """
+        raxml -D -m PROTGAMMALG -s ${phylip_aln} -n ${raxml_output} -p 2233
+        fastme -i ${phylip_aln} -p -g 1.0 -s -n
+        """
 }
 
 process concatenate_alns {

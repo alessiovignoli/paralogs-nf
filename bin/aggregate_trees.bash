@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 
-for fam in `find PF* -maxdepth 0 -type d`; do
+#for fam in `find PF* -maxdepth 0 -type d`; do
+for fam in `find avg_branchlen_0.7_protein_family_* -maxdepth 0 -type d`; do
 	for mode in tcoffee; do #3DCoffee
-		cd $fam/results_without_mouse_10_samples/"$mode"
+		#cd $fam/results_without_mouse_10_samples/"$mode"
+		cd "$fam"/results/rerun
 		echo -e $fam"\t"$mode
 	
-		orgsnum=6
+		orgsnum=25
 		for num in $(seq 1 $orgsnum); do
 			grep "Explained" unit_"$num"_*stat.txt | grep -o '\-*[0-9]\.[0-9]*' > unit_"$num"_explained_variance.dat
 			cat `find unit_"$num"_sample_*_concatenated_aln.phylip_fastme_tree.nwk -maxdepth 0 | sort -V | tr "\n" "\t"` > unit_"$num"_all.nwk

@@ -5,7 +5,7 @@ nextflow.enable.dsl=2
 process extract_fasta_aln_per_species_sim {
 	label 'cpu'
 	tag "${fam}"	
-	publishDir "${fam}/results", mode: 'copy'
+	publishDir "${fam}/results/rerun", mode: 'copy'
 
 	input:
 	tuple val(fam), path(init_aln), path(orthologs_ids)
@@ -17,16 +17,91 @@ process extract_fasta_aln_per_species_sim {
 	script:
 
 	"""
-	extract_seq_per_species_sim.pl ${orthologs_ids} ${init_aln}
-	for fasta in `find *.fasta_aln -maxdepth 0 -type f | grep -v "Guinea_Pig"`; do cp "${fam}".ma_Guinea_Pig.fasta_aln \$fasta; done
+	extract_seq_per_species_sim.pl ${orthologs_ids} ${init_aln} -after
 	"""
 
+}
+
+process extract_fasta_aln_per_species_sim_for_full_aln {
+	label 'cpu'
+	tag "${fam}"	
+	publishDir "${fam}/results/rerun", mode: 'copy'
+
+	input:
+	tuple val(fam), path(init_aln), path(orthologs_ids)
+
+	output:
+	tuple val(fam),path("${fam}_full_aln_coded.phylip"), emit: phylip_full_aln_sim
+	path "*"
+
+	script:
+
+	"""
+	extract_seq_per_species_sim.pl ${orthologs_ids} ${init_aln} -prior
+	cat *_for_full_aln.fasta_aln > ${fam}_full_aln.fasta_aln
+	t_coffee -other_pg seq_reformat -in ${fam}_full_aln.fasta_aln -output code_name > full_aln.code_name
+    t_coffee -other_pg seq_reformat -code full_aln.code_name -in ${fam}_full_aln.fasta_aln > ${fam}_full_aln_coded.fasta_aln
+    t_coffee -other_pg seq_reformat -in ${fam}_full_aln_coded.fasta_aln -output phylip_aln > ${fam}_full_aln_coded.phylip
+	"""
+
+}
+
+process run_phylo_ML_full_sim {
+        label 'cpu'
+        tag "${fam}"
+        publishDir "${fam}/results/rerun", mode: 'copy'
+
+        input:
+        tuple val(fam), path(phylip_aln)
+
+        output:
+        path "*"
+
+        script:
+        raxml_output = phylip_aln.baseName + "_raxml.nwk"
+        """
+        raxml -D -m PROTGAMMALG -s ${phylip_aln} -n ${raxml_output} -p 2233
+        """
+}
+
+process run_phylo_ME_full_sim {
+        label 'cpu'
+        tag "${fam}"
+        publishDir "${fam}/results/rerun", mode: 'copy'
+
+        input:
+        tuple val(fam), path(phylip_aln)
+
+        output:
+        path "*"
+
+        script:
+        """
+        fastme -i ${phylip_aln} -p -g 1.0 -s -n
+        """
+}
+
+process only_concatenate_aln_sim {
+	label 'cpu'
+	tag "${fam}"
+	publishDir "${fam}/results/rerun", mode: 'copy'
+
+	input:
+	tuple val(fam), val(all_aln)
+
+	output:
+	tuple val(fam),path("${fam}_supermatrix.phylip"), emit: phylip_only_concatenate_aln_sim
+
+	shell:
+	'''
+	concatenate_aln.py -f !{fam} -S !{all_aln.join(" ")}
+	'''
 }
 
 process concatenate_alns_sim {
 	label 'cpu'
 	tag "${fam}"
-	publishDir "${fam}/results", mode: 'copy'
+	publishDir "${fam}/results/rerun", mode: 'copy'
 
 	input:
 	tuple val(fam), val(all_aln)
@@ -42,8 +117,10 @@ process concatenate_alns_sim {
 			for single_unit_num in $(eval echo {1..!{ortho}}); do
 				eval "cat single_unit_{1..$single_unit_num}_sample_${sample_num}_concatenated_aln.phylip_fastme_tree.nwk > unit_${single_unit_num}_sample_${sample_num}_concatenated_aln.phylip_fastme_tree_for_supertree.nwk"
 				/SuperFine/runSuperFine.py -r gmrp unit_${single_unit_num}_sample_${sample_num}_concatenated_aln.phylip_fastme_tree_for_supertree.nwk > unit_${single_unit_num}_sample_${sample_num}_concatenated_aln.phylip_fastme_superfine_tree.nwk
+				gotree compute consensus -i unit_${single_unit_num}_sample_${sample_num}_concatenated_aln.phylip_fastme_tree_for_supertree.nwk -o unit_${single_unit_num}_sample_${sample_num}_concatenated_aln.phylip_fastme_consensus_tree.nwk -f 0.5
 				eval "cat RAxML_bestTree.single_unit_{1..$single_unit_num}_sample_${sample_num}_concatenated_aln_raxml.nwk > unit_${single_unit_num}_sample_${sample_num}_concatenated_aln.raxml_tree_for_supertree.nwk"
 				/SuperFine/runSuperFine.py -r gmrp unit_${single_unit_num}_sample_${sample_num}_concatenated_aln.raxml_tree_for_supertree.nwk > unit_${single_unit_num}_sample_${sample_num}_concatenated_aln.raxml_superfine_tree.nwk
+				gotree compute consensus -i unit_${single_unit_num}_sample_${sample_num}_concatenated_aln.raxml_tree_for_supertree.nwk -o unit_${single_unit_num}_sample_${sample_num}_concatenated_aln.raxml_consensus_tree.nwk -f 0.5
 			done
 	done
 	'''
