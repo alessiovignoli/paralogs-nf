@@ -1,0 +1,14 @@
+#stuff not needed for commits
+
+/test/
+bin/**/__pycache__/
+.nextflow*
+/work/
+.DS_Store
+/singularity_cache
+/results/
+.coverage
+.vscode/
+bin/.vscode/
+*.log
+.nf-test/
