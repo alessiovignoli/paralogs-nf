@@ -1,16 +1,30 @@
 #!/usr/env nextflow
 
-nextflow.enable.dsl=2
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    VALIDATE & PRINT PARAMETER SUMMARY
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+/*
+include { validateParameters; paramsHelp } from 'plugin/nf-validation'
 
-//include { data_preparation } from './modules/data_preparation.nf'
-include { extract_fasta_per_species; extract_fasta_per_species_for_full_aln; run_alns; run_full_alns; run_phylo_full; concatenate_alns; concatenate_alns as concatenate_struct_alns } from './modules/supermatrix_and_supertree.nf'
-include { extract_fasta_aln_per_species_sim; extract_fasta_aln_per_species_sim_for_full_aln; concatenate_alns_sim; run_phylo_ML_full_sim as run_phylo_ML_full_aln_sim; run_phylo_ML_full_sim as run_phylo_ML_supermatrix_aln_sim; run_phylo_ME_full_sim as run_phylo_ME_full_aln_sim; run_phylo_ME_full_sim as run_phylo_ME_supermatrix_aln_sim; only_concatenate_aln_sim} from './modules/supermatrix_and_supertree_sim.nf'
-include {run_colabfold; split_multi_fasta; run_alphafold2} from './modules/run_struct_model.nf'
-include {run_struct_aln} from './modules/run_struct_aln.nf'
+// Print help message if needed
+if (params.help) {
+    log.info paramsHelp("nextflow run main.nf --csv my_data.csv --exp_conf exp.yaml --model my_model.py --tune_conf tune.yaml -profie your_profile ")
+    System.exit(0)
+}
 
-params.data = 'sim'
+// Validate input parameters
+if (params.validate_params) {
+    validateParameters()
+}
+*/
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    input handling
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
 
-// data preparation inputs
 /*
 params.input_fasta = "*.fasta"
 if (params.input_fasta) {
@@ -20,85 +34,101 @@ if (params.input_fasta) {
 	.set{in_fasta}
 }*/
 
-params.db = "/users/cn/abaltzis/db/colabfolddb"
-params.ref = "MOUSE"
-params.species_num = 6
-params.mode = 'tcoffee'
-params.orthologs_ids = "PF*/PF*.orthologs_org_ids_to_concatenate"
-params.fasta = "PF*/PF*_domain_sequences_intersect_with_ref_after_OMA.fasta"
-params.intersecting_genes = "PF*/PF*.intersecting_genes"
-//params.AF2 = "PF*/results/AF2/*.pdb"
-
-
-if (params.fasta) {
-        Channel
-	.fromPath(params.fasta)
-	.map { it -> [it.baseName.toString().split("\\.")[0],it]}
-	.groupTuple()
-	.set{grouped_fasta}
+//if (params.fasta) {
+//        Channel
+//	.fromPath(params.fasta)
+//	.map { it -> [it.baseName.toString().split("\\.")[0], it]}
+//	.groupTuple()
+//	.set{grouped_fasta}
 
         //Channel
         //.fromPath(params.fasta)
         //.filter(~/.*${params.ref}_domain_sequences_intersect.*/)
         //.map { it -> [it.baseName.toString().split("\\.")[0],it]}
         //.set{fasta_for_af2}
-}
+//}
+/*
 if (params.intersecting_genes) {
         Channel
         .fromPath(params.intersecting_genes)
-        .map { it -> [it.baseName.toString().split("\\.")[0],it]}
+        .map { it -> [it.baseName.toString().split("\\.")[0], it]}
         .set{intersect}
 }
 if (params.orthologs_ids) {
         Channel
         .fromPath(params.orthologs_ids)
-        .map { it -> [it.baseName.toString().split("\\.")[0],it]}
+        .map { it -> [it.baseName.toString().split("\\.")[0], it]}
         .set{ortho}
 }
-intersect.combine(ortho,by:0).combine(grouped_fasta,by:0).set{input_fasta}
+intersect.combine(ortho, by:0).combine(grouped_fasta, by:0).set{input_fasta}
 //Channel.fromPath(params.AF2).map { it -> [it.toString().split('\\/')[-4],it]}.groupTuple().set{af2_models}
 
-
-
-params.species_num_sim = 25
-params.input_sim = "*.ma"
-params.orthologs_ids_sim = "orthologs_org_ids_to_concatenate"
 Channel.fromPath(params.input_sim).map{it -> [it.baseName,it]}.set {input_aln_sim}
 Channel.fromPath(params.orthologs_ids_sim).set{orthologs_ids_sim}
+*/
 
-if(params.data == 'pfam') {
-        log.info """\
-Paralogs Analysis - version 0.1
-=====================================
-Input paralogs datasets (FASTA)		        : ${params.fasta}
-Number of species		                : ${params.species_num}
-Input paralog genes		                : ${params.intersecting_genes}
-Input species names		                : ${params.orthologs_ids}
-MSA algorithm (TCoffee, PSICoffee, MAFFT-Ginsi) : ${params.mode}
-"""
-.stripIndent()
-}
-else {
-        log.info """\
-Paralogs Analysis - version 0.1
-=====================================
-Input simulated paralogs datasets (FASTA)       : ${params.input_sim}
-Number of species		                : ${params.species_num_sim}
-Input species names		                : ${params.orthologs_ids_sim}
-"""
-.stripIndent()
-}
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    NAMED WORKFLOW FOR PIPELINE
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+
+//include { data_preparation } from './modules/data_preparation.nf'
+include { extract_fasta_per_species; extract_fasta_per_species_for_full_aln; run_alns; run_full_alns; run_phylo_full; concatenate_alns; concatenate_alns as concatenate_struct_alns } from './modules/supermatrix_and_supertree.nf'
+include { extract_fasta_aln_per_species_sim; extract_fasta_aln_per_species_sim_for_full_aln; concatenate_alns_sim; run_phylo_ML_full_sim as run_phylo_ML_full_aln_sim; run_phylo_ML_full_sim as run_phylo_ML_supermatrix_aln_sim; run_phylo_ME_full_sim as run_phylo_ME_full_aln_sim; run_phylo_ME_full_sim as run_phylo_ME_supermatrix_aln_sim; only_concatenate_aln_sim} from './modules/supermatrix_and_supertree_sim.nf'
+include {run_colabfold; split_multi_fasta; run_alphafold2} from './modules/run_struct_model.nf'
+include {run_struct_aln} from './modules/run_struct_aln.nf'
+
+
+//params.data = 'sim'
+//params.db = "/users/cn/abaltzis/db/colabfolddb"
+//params.ref = "MOUSE"
+//params.species_num = 6
+//params.mode = 'tcoffee'
+//params.orthologs_ids = "PF*/PF*.orthologs_org_ids_to_concatenate"
+//params.fasta = "PF*/PF*_domain_sequences_intersect_with_ref_after_OMA.fasta"
+//params.intersecting_genes = "PF*/PF*.intersecting_genes"
+//params.AF2 = "PF*/results/AF2/*.pdb"
+//params.species_num_sim = 25
+//params.input_sim = "*.ma"
+//params.orthologs_ids_sim = "orthologs_org_ids_to_concatenate"
+
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    RUN ALL WORKFLOWS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
 
 workflow pfam_data_with_AF2 {
-        extract_fasta_per_species(input_fasta,params.mode)
+
+        take:
+        fasta
+        intersecting_genes
+        orthologs_ids
+
+        main:
+        // first prepare and group together the inputs
+        grouped_fasta = Channel.fromPath(fasta)
+                        .map { it -> [it.baseName.toString().split("\\.")[0], it]}
+	                .groupTuple()
+        intersect     = Channel.fromPath(intersecting_genes)
+                        .map { it -> [it.baseName.toString().split("\\.")[0], it]}
+        ortho         = Channel.fromPath(orthologs_ids)
+                        .map { it -> [it.baseName.toString().split("\\.")[0], it]}
+        input_fasta   = intersect.combine(ortho, by:0).combine(grouped_fasta, by:0)
+
+        extract_fasta_per_species(input_fasta, params.mode)
         extract_fasta_per_species.out.transpose().set{aln_input}
-        extract_fasta_per_species_for_full_aln(input_fasta,params.mode)
+        extract_fasta_per_species_for_full_aln(input_fasta, params.mode)
 
                 //run_colabfold(aln_input,params.db)
-        run_alns(aln_input,params.mode)
+        run_alns(aln_input, params.mode)
         extract_fasta_per_species_for_full_aln.out.combine(run_alns.out.code_name.groupTuple().map{it -> [it[0], it[1][0]]}, by:0).set{run_full_alns_input}
-        run_full_alns(run_full_alns_input,params.mode)
-        run_phylo_full(run_full_alns.out.full_aln,params.mode)
+        run_full_alns(run_full_alns_input, params.mode)
+        run_phylo_full(run_full_alns.out.full_aln, params.mode)
         //run_phylo_recon(run_full_alns.out.transpose(),params.mode)
         //run_alns.out.aln_output.filter(~/^((?!MOUSE_domain).)*$/).groupTuple().set{alns_grouped}
         //concatenate_alns(alns_grouped,params.mode,params.species_num)
@@ -107,6 +137,7 @@ workflow pfam_data_with_AF2 {
         //run_struct_aln.out.struct_aln_output.groupTuple().set{struct_alns_grouped}
         //concatenate_struct_alns(struct_alns_grouped,'3DCoffee',params.species_num)
 }
+
 
 workflow pfam_data_without_AF2 {
         extract_fasta_per_species(input_fasta,params.mode)
@@ -118,7 +149,19 @@ workflow pfam_data_without_AF2 {
         run_struct_ref(struct_ref_input,params.ref)
 }
 
+
 workflow simulated_data {
+
+        take:
+        input_sim
+        orthologs_ids
+
+        main:
+        // first prepare the inputs
+        input_aln_sim     = Channel.fromPath(input_sim)
+                            .map{it -> [it.baseName, it]}
+        orthologs_ids_sim = Channel.fromPath(orthologs_ids)
+
         extract_fasta_aln_per_species_sim_for_full_aln(input_aln_sim.combine(orthologs_ids_sim))
         run_phylo_ML_full_aln_sim(extract_fasta_aln_per_species_sim_for_full_aln.out.phylip_full_aln_sim)
         run_phylo_ME_full_aln_sim(extract_fasta_aln_per_species_sim_for_full_aln.out.phylip_full_aln_sim)
@@ -131,13 +174,49 @@ workflow simulated_data {
 }
 
 workflow {
-        if (params.data == 'pfam')
-                pfam_data_with_AF2()
-        else
-                simulated_data()
+
+        if (params.data == 'pfam') {
+
+                log.info """\
+                Paralogs Analysis - version 0.1
+                =====================================
+                Input paralogs datasets (FASTA)		        : ${params.fasta}
+                Number of species		                : ${params.species_num}
+                Input paralog genes		                : ${params.intersecting_genes}
+                Input species names		                : ${params.orthologs_ids}
+                MSA algorithm (TCoffee, PSICoffee, MAFFT-Ginsi) : ${params.mode}
+                """
+                .stripIndent()
+                pfam_data_with_AF2(params.fasta, params.intersecting_genes, params.orthologs_ids)
+
+        } else if (params.data == 'sim') {
+
+                log.info """\
+                Paralogs Analysis - version 0.1
+                =====================================
+                Input simulated paralogs datasets (FASTA)       : ${params.input_sim}
+                Number of species		                : ${params.species_num_sim}
+                Input species names		                : ${params.orthologs_ids_sim}
+                """
+                .stripIndent()
+                simulated_data(params.input_sim, params.orthologs_ids_sim)
+
+        } else {
+
+                log.info "the data parameter has to be either 'pfam' or 'sim', pointing to the type of analysis and data to be used. \ngiven : ${params.data}"
+                exit 1
+
+        }
+
 }
 
 workflow.onComplete {
         println "Pipeline completed at: $workflow.complete"
         println "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
 }
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    THE END
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
