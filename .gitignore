@@ -12,3 +12,4 @@ bin/**/__pycache__/
 bin/.vscode/
 *.log
 .nf-test/
+*.sh
