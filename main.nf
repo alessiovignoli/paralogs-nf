@@ -32,39 +32,9 @@ if (params.input_fasta) {
 	.fromPath(params.input_fasta)
 	.map { it -> [it.baseName,it]}
 	.set{in_fasta}
-}*/
-
-//if (params.fasta) {
-//        Channel
-//	.fromPath(params.fasta)
-//	.map { it -> [it.baseName.toString().split("\\.")[0], it]}
-//	.groupTuple()
-//	.set{grouped_fasta}
-
-        //Channel
-        //.fromPath(params.fasta)
-        //.filter(~/.*${params.ref}_domain_sequences_intersect.*/)
-        //.map { it -> [it.baseName.toString().split("\\.")[0],it]}
-        //.set{fasta_for_af2}
-//}
-/*
-if (params.intersecting_genes) {
-        Channel
-        .fromPath(params.intersecting_genes)
-        .map { it -> [it.baseName.toString().split("\\.")[0], it]}
-        .set{intersect}
 }
-if (params.orthologs_ids) {
-        Channel
-        .fromPath(params.orthologs_ids)
-        .map { it -> [it.baseName.toString().split("\\.")[0], it]}
-        .set{ortho}
-}
-intersect.combine(ortho, by:0).combine(grouped_fasta, by:0).set{input_fasta}
-//Channel.fromPath(params.AF2).map { it -> [it.toString().split('\\/')[-4],it]}.groupTuple().set{af2_models}
 
-Channel.fromPath(params.input_sim).map{it -> [it.baseName,it]}.set {input_aln_sim}
-Channel.fromPath(params.orthologs_ids_sim).set{orthologs_ids_sim}
+Channel.fromPath(params.AF2).map { it -> [it.toString().split('\\/')[-4],it]}.groupTuple().set{af2_models}
 */
 
 /*
@@ -119,7 +89,8 @@ workflow pfam_data_with_AF2 {
         ortho         = Channel.fromPath(orthologs_ids)
                         .map { it -> [it.baseName.toString().split("\\.")[0], it]}
         input_fasta   = intersect.combine(ortho, by:0).combine(grouped_fasta, by:0)
-
+        
+        
         extract_fasta_per_species(input_fasta, params.mode)
         extract_fasta_per_species.out.transpose().set{aln_input}
         extract_fasta_per_species_for_full_aln(input_fasta, params.mode)
@@ -136,6 +107,7 @@ workflow pfam_data_with_AF2 {
         //run_struct_aln(struct_aln_input)
         //run_struct_aln.out.struct_aln_output.groupTuple().set{struct_alns_grouped}
         //concatenate_struct_alns(struct_alns_grouped,'3DCoffee',params.species_num)
+        
 }
 
 
@@ -161,16 +133,22 @@ workflow simulated_data {
         input_aln_sim     = Channel.fromPath(input_sim)
                             .map{it -> [it.baseName, it]}
         orthologs_ids_sim = Channel.fromPath(orthologs_ids)
-
+        
+        // BigTree compotutation
+        // takes a MSA and a list of species names, -> phylip format MSA with all sequence from the same species one after the other and header names changed into code values.
         extract_fasta_aln_per_species_sim_for_full_aln(input_aln_sim.combine(orthologs_ids_sim))
+        // computes the ML tree from previous phylip alignment
         run_phylo_ML_full_aln_sim(extract_fasta_aln_per_species_sim_for_full_aln.out.phylip_full_aln_sim)
+        // computes the ME tree previous phylip alignmen
         run_phylo_ME_full_aln_sim(extract_fasta_aln_per_species_sim_for_full_aln.out.phylip_full_aln_sim)
 
+        /*
         extract_fasta_aln_per_species_sim(input_aln_sim.combine(orthologs_ids_sim))
         only_concatenate_aln_sim(extract_fasta_aln_per_species_sim.out.all_aln_sim)
         run_phylo_ML_supermatrix_aln_sim(only_concatenate_aln_sim.out.phylip_only_concatenate_aln_sim)
         run_phylo_ME_supermatrix_aln_sim(only_concatenate_aln_sim.out.phylip_only_concatenate_aln_sim)
         concatenate_alns_sim(extract_fasta_aln_per_species_sim.out.all_aln_sim,params.species_num_sim)
+        */
 }
 
 workflow {

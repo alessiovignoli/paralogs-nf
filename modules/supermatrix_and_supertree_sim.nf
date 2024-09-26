@@ -4,8 +4,7 @@ nextflow.enable.dsl=2
 
 process extract_fasta_aln_per_species_sim {
 	label 'cpu'
-	tag "${fam}"	
-	publishDir "${fam}/results/rerun", mode: 'copy'
+	tag "${fam}"
 
 	input:
 	tuple val(fam), path(init_aln), path(orthologs_ids)
@@ -22,17 +21,17 @@ process extract_fasta_aln_per_species_sim {
 
 }
 
+// takes a MSA and a list of species names, -> phylip format MSA with all sequence from the same species one after the other and header names changed into code values.
 process extract_fasta_aln_per_species_sim_for_full_aln {
-	label 'cpu'
-	tag "${fam}"	
-	publishDir "${fam}/results/rerun", mode: 'copy'
+	label 'process_low'
+	tag "${fam}"
 
 	input:
 	tuple val(fam), path(init_aln), path(orthologs_ids)
 
 	output:
 	tuple val(fam),path("${fam}_full_aln_coded.phylip"), emit: phylip_full_aln_sim
-	path "*"
+	//path "*"
 
 	script:
 
@@ -46,10 +45,10 @@ process extract_fasta_aln_per_species_sim_for_full_aln {
 
 }
 
+// computes the ML tree given an alignment in phylip form.
 process run_phylo_ML_full_sim {
-        label 'cpu'
+        label 'process_low'
         tag "${fam}"
-        publishDir "${fam}/results/rerun", mode: 'copy'
 
         input:
         tuple val(fam), path(phylip_aln)
@@ -60,14 +59,14 @@ process run_phylo_ML_full_sim {
         script:
         raxml_output = phylip_aln.baseName + "_raxml.nwk"
         """
-        raxml -D -m PROTGAMMALG -s ${phylip_aln} -n ${raxml_output} -p 2233
+        time raxml -D -m PROTGAMMALG -s ${phylip_aln} -n ${raxml_output} -p 2233
         """
 }
 
+// computes the ME tree given an alignment in phylip form.
 process run_phylo_ME_full_sim {
-        label 'cpu'
+        label 'process_low'
         tag "${fam}"
-        publishDir "${fam}/results/rerun", mode: 'copy'
 
         input:
         tuple val(fam), path(phylip_aln)
@@ -84,7 +83,6 @@ process run_phylo_ME_full_sim {
 process only_concatenate_aln_sim {
 	label 'cpu'
 	tag "${fam}"
-	publishDir "${fam}/results/rerun", mode: 'copy'
 
 	input:
 	tuple val(fam), val(all_aln)
@@ -101,7 +99,6 @@ process only_concatenate_aln_sim {
 process concatenate_alns_sim {
 	label 'cpu'
 	tag "${fam}"
-	publishDir "${fam}/results/rerun", mode: 'copy'
 
 	input:
 	tuple val(fam), val(all_aln)
