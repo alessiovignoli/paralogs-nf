@@ -142,13 +142,18 @@ workflow simulated_data {
         // computes the ME tree previous phylip alignmen
         run_phylo_ME_full_aln_sim(extract_fasta_aln_per_species_sim_for_full_aln.out.phylip_full_aln_sim)
 
-        /*
+        // from the family MSA extraxct  one msa in fasta format per species, each with all sequences in input fasta from the same species. Order of sequences is preserved.
         extract_fasta_aln_per_species_sim(input_aln_sim.combine(orthologs_ids_sim))
+
+        // SuperMatrix with all species and no shuffle.
+        // gets the list of MSAs form each family extracted above (one family at the time) and concatenates all first sequences of all MSA in the list into the same line, same for the second and so on. Order of concatenation is not the order of mSA filenames in the list. The output is a single concatenated MSA in phylip format (columns are not shuffled yet). 
         only_concatenate_aln_sim(extract_fasta_aln_per_species_sim.out.all_aln_sim)
         run_phylo_ML_supermatrix_aln_sim(only_concatenate_aln_sim.out.phylip_only_concatenate_aln_sim)
         run_phylo_ME_supermatrix_aln_sim(only_concatenate_aln_sim.out.phylip_only_concatenate_aln_sim)
-        concatenate_alns_sim(extract_fasta_aln_per_species_sim.out.all_aln_sim,params.species_num_sim)
-        */
+        
+        // The following process will do the whole SuperMatrix and SuperTree computation. With 10 replication as well. it will generate all the relevant trees -> 500 (250 ST and 250 SM). 250 = 25 species/units * 10 replicates/samples. 
+        concatenate_alns_sim(extract_fasta_aln_per_species_sim.out.all_aln_sim, params.species_num_sim)
+        
 }
 
 workflow {
