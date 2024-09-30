@@ -112,7 +112,7 @@ process only_concatenate_aln_sim {
 // the bash for loop will then take the (250) single_unit trees and append them in a file in blocks like: single_unit1 tree  (file1), single_unit1 tree  + single_unit2 tree (file2) ecc.. . this is done for both ME and ML trees respectively.
 //      this (500) "appended" file are fed to superfine that will do the SuperTree approach, this are the final SuperTree trees.
 process concatenate_alns_sim {
-	label 'process_medium'
+	label 'process_high'
 	tag "${fam}"
 
 	input:
