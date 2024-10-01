@@ -1,6 +1,7 @@
 #stuff not needed for commits
 
 /test/
+/*/.ipynb_checkpoints/
 bin/**/__pycache__/
 .nextflow*
 /work/
