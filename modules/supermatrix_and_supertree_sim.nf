@@ -30,7 +30,7 @@ process extract_fasta_aln_per_species_sim_for_full_aln {
 
 	output:
 	tuple val(fam), path("${fam}_full_aln_coded.phylip"), emit: phylip_full_aln_sim
-	//path "*"
+	path "full_aln.code_name"
 
 	script:
 	"""
