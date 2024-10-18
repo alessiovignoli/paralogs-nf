@@ -44,11 +44,38 @@ Channel.fromPath(params.AF2).map { it -> [it.toString().split('\\/')[-4],it]}.gr
 */
 
 
+include { extract_fasta_per_species } from './modules/supermatrix_and_supertree.nf'
+include { extract_fasta_per_species_for_full_aln } from './modules/supermatrix_and_supertree.nf'
+include { run_alns } from './modules/supermatrix_and_supertree.nf'
+include { run_full_alns } from './modules/supermatrix_and_supertree.nf'
+include { run_phylo_full } from './modules/supermatrix_and_supertree.nf'
+include { concatenate_alns } from './modules/supermatrix_and_supertree.nf'
+include { concatenate_alns as concatenate_struct_alns } from './modules/supermatrix_and_supertree.nf'
+
+include { extract_fasta_aln_per_species_sim } from './modules/supermatrix_and_supertree_sim.nf'
+include { extract_fasta_aln_per_species_sim_for_full_aln } from './modules/supermatrix_and_supertree_sim.nf'
+include { concatenate_alns_sim } from './modules/supermatrix_and_supertree_sim.nf'
+include { run_phylo_ML_full_sim as run_phylo_ML_full_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
+include { run_phylo_ML_full_sim as run_phylo_ML_supermatrix_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
+include { run_phylo_ME_full_sim as run_phylo_ME_full_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
+include { run_phylo_ME_full_sim as run_phylo_ME_supermatrix_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
+include { only_concatenate_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
+include { extract_species_submsa as extract_species_submsa_ML } from './modules/supermatrix_and_supertree_sim.nf'
+
+include { run_colabfold } from './modules/run_struct_model.nf'
+include { split_multi_fasta } from './modules/run_struct_model.nf'
+include { run_alphafold2 } from './modules/run_struct_model.nf'
+
+include { run_struct_aln } from './modules/run_struct_aln.nf'
+
+
+// TODO remove all the below
+
 //include { data_preparation } from './modules/data_preparation.nf'
-include { extract_fasta_per_species; extract_fasta_per_species_for_full_aln; run_alns; run_full_alns; run_phylo_full; concatenate_alns; concatenate_alns as concatenate_struct_alns } from './modules/supermatrix_and_supertree.nf'
-include { extract_fasta_aln_per_species_sim; extract_fasta_aln_per_species_sim_for_full_aln; concatenate_alns_sim; run_phylo_ML_full_sim as run_phylo_ML_full_aln_sim; run_phylo_ML_full_sim as run_phylo_ML_supermatrix_aln_sim; run_phylo_ME_full_sim as run_phylo_ME_full_aln_sim; run_phylo_ME_full_sim as run_phylo_ME_supermatrix_aln_sim; only_concatenate_aln_sim} from './modules/supermatrix_and_supertree_sim.nf'
-include {run_colabfold; split_multi_fasta; run_alphafold2} from './modules/run_struct_model.nf'
-include {run_struct_aln} from './modules/run_struct_aln.nf'
+//include { extract_fasta_per_species; extract_fasta_per_species_for_full_aln; run_alns; run_full_alns; run_phylo_full; concatenate_alns; concatenate_alns as concatenate_struct_alns } from './modules/supermatrix_and_supertree.nf'
+//include { extract_fasta_aln_per_species_sim; extract_fasta_aln_per_species_sim_for_full_aln; concatenate_alns_sim; run_phylo_ML_full_sim as run_phylo_ML_full_aln_sim; run_phylo_ML_full_sim as run_phylo_ML_supermatrix_aln_sim; run_phylo_ME_full_sim as run_phylo_ME_full_aln_sim; run_phylo_ME_full_sim as run_phylo_ME_supermatrix_aln_sim; only_concatenate_aln_sim} from './modules/supermatrix_and_supertree_sim.nf'
+//include {run_colabfold; split_multi_fasta; run_alphafold2} from './modules/run_struct_model.nf'
+//include {run_struct_aln} from './modules/run_struct_aln.nf'
 
 
 //params.data = 'sim'
@@ -141,6 +168,13 @@ workflow simulated_data {
         run_phylo_ML_full_aln_sim(extract_fasta_aln_per_species_sim_for_full_aln.out.phylip_full_aln_sim)
         // computes the ME tree previous phylip alignmen
         run_phylo_ME_full_aln_sim(extract_fasta_aln_per_species_sim_for_full_aln.out.phylip_full_aln_sim)
+        // extracting the submsas per species from the ML trees connecting the tree with the codename file that is nedded to ranem the tree tips labels
+        extract_inputs = run_phylo_ML_full_aln_sim.out.ml_bestree.join(extract_fasta_aln_per_species_sim_for_full_aln.out.msa_code_name)
+        extract_species_submsa_ML(extract_inputs)
+        
+
+
+        
 
         // from the family MSA extraxct  one msa in fasta format per species, each with all sequences in input fasta from the same species. Order of sequences is preserved.
         extract_fasta_aln_per_species_sim(input_aln_sim.combine(orthologs_ids_sim))

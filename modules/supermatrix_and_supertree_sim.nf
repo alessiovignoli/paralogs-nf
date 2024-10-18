@@ -30,7 +30,7 @@ process extract_fasta_aln_per_species_sim_for_full_aln {
 
 	output:
 	tuple val(fam), path("${fam}_full_aln_coded.phylip"), emit: phylip_full_aln_sim
-	path "full_aln.code_name"
+	tuple val(fam), path("full_aln.code_name"), path(orthologs_ids), emit: msa_code_name
 
 	script:
 	"""
@@ -53,6 +53,7 @@ process run_phylo_ML_full_sim {
 
 	output:
 	path "*"
+	tuple val(fam), path("RAxML_bestTree*"), emit: ml_bestree
 
 	script:
 	raxml_output = phylip_aln.baseName + "_raxml.nwk"
@@ -77,6 +78,25 @@ process run_phylo_ME_full_sim {
 	"""
 	fastme -i ${phylip_aln} -p -g 1.0 -s -n
 	"""
+}
+
+// given a gene family tree extracts all the subfamilies trees and puts them into a file ready to be used by superfine 
+process extract_species_submsa {
+	label 'process_low'
+	tag "${fam}"
+
+	input:
+	tuple val(fam), path(gene_family_tree), path(msa_code_name_file), path(orthologs_ids)
+
+	output:
+	tuple val(fam), path("*"), emit: species_subtrees
+
+	script:
+	output_name = gene_family_tree.baseName + "_species_subtrees.nwk"
+	"""
+	extract_species_subtrees.R ${gene_family_tree} ${msa_code_name_file} ${orthologs_ids}  ${output_name}
+	"""
+
 }
 
 
