@@ -65,7 +65,7 @@ main <- function() {
     test_subtree <- unroot(test_subtree)
     
     # Rename the tips
-    #test_subtree$tip.label <- gsub(paste0(species, "_"), "Seq_", test_subtree$tip.label)
+    test_subtree$tip.label <- gsub(paste0(species, "_"), "Seq_", test_subtree$tip.label)
     
     # Change class of tree and add it to the collection
     test_subtree <- as.multiPhylo(test_subtree)

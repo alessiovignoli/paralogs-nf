@@ -73,6 +73,7 @@ process run_phylo_ME_full_sim {
 
 	output:
 	path "*"
+	tuple val(fam), path("*_fastme_tree.nwk"), emit: me_bestree
 
 	script:
 	"""
@@ -92,9 +93,28 @@ process extract_species_submsa {
 	tuple val(fam), path("*"), emit: species_subtrees
 
 	script:
-	output_name = gene_family_tree.baseName + "_species_subtrees.nwk"
+	output_name = gene_family_tree.baseName + ".species_subtrees.nwk"
 	"""
 	extract_species_subtrees.R ${gene_family_tree} ${msa_code_name_file} ${orthologs_ids}  ${output_name}
+	"""
+
+}
+
+
+process superfine {
+	label 'process_low'
+	tag "${fam}"
+
+	input:
+	tuple val(fam), path(trees_tobe_merged)
+
+	output:
+	path output
+
+	script:
+	output = ("${trees_tobe_merged}".split("\\."))[0..-3].join(".") + "_paralog_tree.nwk"
+	"""
+	/SuperFine/runSuperFine.py -r gmrp ${trees_tobe_merged} > ${output}
 	"""
 
 }
@@ -110,7 +130,7 @@ process only_concatenate_aln_sim {
 	tuple val(fam), val(all_aln)
 
 	output:
-	tuple val(fam),path("${fam}_supermatrix.phylip"), emit: phylip_only_concatenate_aln_sim
+	tuple val(fam), path("${fam}_supermatrix.phylip"), emit: phylip_only_concatenate_aln_sim
 
 	shell:
 	'''

@@ -61,6 +61,8 @@ include { run_phylo_ME_full_sim as run_phylo_ME_full_aln_sim } from './modules/s
 include { run_phylo_ME_full_sim as run_phylo_ME_supermatrix_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
 include { only_concatenate_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
 include { extract_species_submsa as extract_species_submsa_ML } from './modules/supermatrix_and_supertree_sim.nf'
+include { extract_species_submsa as extract_species_submsa_ME } from './modules/supermatrix_and_supertree_sim.nf'
+include { superfine } from './modules/supermatrix_and_supertree_sim.nf'
 
 include { run_colabfold } from './modules/run_struct_model.nf'
 include { split_multi_fasta } from './modules/run_struct_model.nf'
@@ -169,13 +171,23 @@ workflow simulated_data {
         // computes the ME tree previous phylip alignmen
         run_phylo_ME_full_aln_sim(extract_fasta_aln_per_species_sim_for_full_aln.out.phylip_full_aln_sim)
         // extracting the submsas per species from the ML trees connecting the tree with the codename file that is nedded to ranem the tree tips labels
-        extract_inputs = run_phylo_ML_full_aln_sim.out.ml_bestree.join(extract_fasta_aln_per_species_sim_for_full_aln.out.msa_code_name)
-        extract_species_submsa_ML(extract_inputs)
+        extract_inputs_ML = run_phylo_ML_full_aln_sim.out.ml_bestree.join(extract_fasta_aln_per_species_sim_for_full_aln.out.msa_code_name)
+        extract_species_submsa_ML(extract_inputs_ML)
+        tobe_merged_ML = extract_species_submsa_ML.out.species_subtrees.map{
+                it -> [(it[0] + " - ML"), it[1]]
+        }
+        // extracting the submsas per species from the ME trees connecting the tree with the codename file that is nedded to ranem the tree tips labels
+        extract_inputs_ME = run_phylo_ME_full_aln_sim.out.me_bestree.join(extract_fasta_aln_per_species_sim_for_full_aln.out.msa_code_name)
+        extract_species_submsa_ME(extract_inputs_ME)
+        tobe_merged_ME = extract_species_submsa_ME.out.species_subtrees.map{
+                it -> [(it[0] + " - ME"), it[1]]
+        }
+        // put in the same channel ME and ML extracted trees
+        ready_for_superfine = tobe_merged_ML.concat(tobe_merged_ME)
+        // use the superfine program to merge all species_submsa into one paralog tree
+        superfine(ready_for_superfine)
+
         
-
-
-        
-
         // from the family MSA extraxct  one msa in fasta format per species, each with all sequences in input fasta from the same species. Order of sequences is preserved.
         extract_fasta_aln_per_species_sim(input_aln_sim.combine(orthologs_ids_sim))
 
