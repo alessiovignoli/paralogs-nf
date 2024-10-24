@@ -103,15 +103,16 @@ process extract_species_submsa {
 
 process superfine {
 	label 'process_low'
-	tag "${fam}"
+	tag "${id}"
 
 	input:
-	tuple val(fam), path(trees_tobe_merged)
+	tuple val(id), path(trees_tobe_merged)
 
 	output:
 	path output
 
 	script:
+	fam = id.split(" ")[0]
 	output = ("${trees_tobe_merged}".split("\\."))[0..-3].join(".") + "_paralog_tree.nwk"
 	"""
 	/SuperFine/runSuperFine.py -r gmrp ${trees_tobe_merged} > ${output}
