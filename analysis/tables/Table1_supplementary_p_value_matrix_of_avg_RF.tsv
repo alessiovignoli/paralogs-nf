@@ -1,0 +1,7 @@
+ME_SM_unit_25	ME_ST_unit_25	ML_SM_unit_25	ML_ST_unit_25	ME_BigTree	ML_BigTree
+ME_SM_unit_25	NA	NA	NA	NA	NA	NA
+ME_ST_unit_25	0.000171	NA	NA	NA	NA	NA
+ML_SM_unit_25	1.78e-18	2.01e-14	NA	NA	NA	NA
+ML_ST_unit_25	9.52e-17	2.82e-14	0.0504	NA	NA	NA
+ME_BigTree	1	0.00221	7.7e-18	1.21e-14	NA	NA
+ML_BigTree	1.55e-18	5.6e-17	1	2e-04	1.7e-22	NA
