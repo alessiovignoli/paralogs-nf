@@ -57,8 +57,10 @@ include { extract_fasta_aln_per_species_sim_for_full_aln } from './modules/super
 include { concatenate_alns_sim } from './modules/supermatrix_and_supertree_sim.nf'
 include { run_phylo_ML_full_sim as run_phylo_ML_full_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
 include { run_phylo_ML_full_sim as run_phylo_ML_supermatrix_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
+include { run_phylo_ML_full_sim as run_phylo_ML_supertree_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
 include { run_phylo_ME_full_sim as run_phylo_ME_full_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
 include { run_phylo_ME_full_sim as run_phylo_ME_supermatrix_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
+include { run_phylo_ME_full_sim as run_phylo_ME_supertree_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
 include { only_concatenate_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
 include { extract_species_submsa as extract_species_submsa_ML } from './modules/supermatrix_and_supertree_sim.nf'
 include { extract_species_submsa as extract_species_submsa_ME } from './modules/supermatrix_and_supertree_sim.nf'
@@ -197,8 +199,18 @@ workflow simulated_data {
         run_phylo_ML_supermatrix_aln_sim(only_concatenate_aln_sim.out.phylip_only_concatenate_aln_sim)
         run_phylo_ME_supermatrix_aln_sim(only_concatenate_aln_sim.out.phylip_only_concatenate_aln_sim)
         
+        // SuperTree with all species and no shuffle.
+        // gets the list of MSAs form each family extracted above (one family at the time) and for each MSA it computes the (paralog) tree. Then thanks to superfine it merges all  this (25) trees into a singel (paralog) tree.
+        // the creation of the species paralogs happens in parallel for each of them (not a for loop). So first the above list is divided in family identifier + single species MSA.
+        msas_for_supertree = extract_fasta_aln_per_species_sim.out.all_aln_sim.transpose()
+        // then each msa is made into phylip format and then the species paralog tree is made either using ME or ML.
+        run_phylo_ML_supertree_aln_sim(msas_for_supertree)
+        //run_phylo_ME_supertree_aln_sim(msas_for_supertree)
+        
+
+
         // The following process will do the whole SuperMatrix and SuperTree computation. With 10 replication as well. it will generate all the relevant trees -> 500 (250 ST and 250 SM). 250 = 25 species/units * 10 replicates/samples. 
-        concatenate_alns_sim(extract_fasta_aln_per_species_sim.out.all_aln_sim, params.species_num_sim)
+        //concatenate_alns_sim(extract_fasta_aln_per_species_sim.out.all_aln_sim, params.species_num_sim)
         
 }
 
