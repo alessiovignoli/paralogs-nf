@@ -45,7 +45,7 @@ process extract_fasta_aln_per_species_sim_for_full_aln {
 
 // computes the ML tree given an alignment in phylip form.
 process run_phylo_ML_full_sim {
-	label 'process_low'
+	label 'process_medium'
 	tag "${fam}"
 
 	input:
@@ -65,7 +65,7 @@ process run_phylo_ML_full_sim {
 
 // computes the ME tree given an alignment in phylip form.
 process run_phylo_ME_full_sim {
-	label 'process_low'
+	label 'process_medium'
 	tag "${fam}"
 
 	input:
@@ -100,7 +100,7 @@ process extract_species_submsa {
 
 }
 
-
+// mergees a set of trees using the program superfine. It can work with one file containg many trees or many files containing only one tree.
 process superfine {
 	label 'process_low'
 	tag "${id}"
@@ -113,13 +113,31 @@ process superfine {
 
 	script:
 	fam = id.split(" ")[0]
-	output = ("${trees_tobe_merged}".split("\\."))[0..-3].join(".") + "_paralog_tree.nwk"
+	output = ("${trees_tobe_merged}".split(" ")[0].split("\\."))[0..-3].join(".") + "_paralog_tree.nwk"
 	"""
-	/SuperFine/runSuperFine.py -r gmrp ${trees_tobe_merged} > ${output}
+	cat ${trees_tobe_merged} > tmp
+	/SuperFine/runSuperFine.py -r gmrp tmp > ${output}
 	"""
 
 }
 
+// transforms a fasta MSA into a phylip format MSA.
+process from_fasta_to_phylip {
+	label 'process_low'
+	tag "${msa_fasta}"
+
+	input:
+	tuple val(id), path(msa_fasta)
+
+	output:
+	tuple val(id), path(output), emit: phylip
+
+	script:
+	output = ("${msa_fasta}".split("\\."))[0..-2].join(".") + ".phylip"
+	"""
+	t_coffee -other_pg seq_reformat -in ${msa_fasta} -output phylip_aln > ${output}
+	"""
+}
 
 // gets a list of MSA with same number of sequences in the same order, meaning that the first sequence in MSA 1 is expected to be related (ortholog) to sequence 1 in MSA2 3 4 .. ecc.. 
 // it spits out a single MSA in phylip format with number of sequences the MSA1 num seq, but with len = num MSA * len aln in MSA. basucally puts all first sequences of all MSA into the same line (concatenating them), same for the second and so on. Order of concatenation is not the order of mSA filenames in the list. 
