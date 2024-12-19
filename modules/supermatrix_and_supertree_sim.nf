@@ -45,7 +45,7 @@ process extract_fasta_aln_per_species_sim_for_full_aln {
 
 // computes the ML tree given an alignment in phylip form.
 process run_phylo_ML_full_sim {
-	label 'process_medium'
+	label 'process_low'
 	tag "${fam}"
 
 	input:
@@ -65,7 +65,7 @@ process run_phylo_ML_full_sim {
 
 // computes the ME tree given an alignment in phylip form.
 process run_phylo_ME_full_sim {
-	label 'process_medium'
+	label 'process_low'
 	tag "${fam}"
 
 	input:
