@@ -113,6 +113,7 @@ workflow pfam_data_with_AF2 {
         orthologs_ids
 
         main:
+
         // first prepare and group together the inputs
         grouped_fasta = Channel.fromPath(fasta)
                         .map { it -> [it.baseName.toString().split("\\.")[0], it]}
@@ -123,16 +124,15 @@ workflow pfam_data_with_AF2 {
                         .map { it -> [it.baseName.toString().split("\\.")[0], it]}
         input_fasta   = intersect.combine(ortho, by:0).combine(grouped_fasta, by:0)
         
-        
-        extract_fasta_per_species(input_fasta, params.mode)
-        extract_fasta_per_species.out.transpose().set{aln_input}
-        extract_fasta_per_species_for_full_aln(input_fasta, params.mode)
+        // gathering the correct sequence inputs for each PFAM family
+        extract_fasta_per_species(input_fasta)
+        aln_input = extract_fasta_per_species.out.selected_fasta.transpose()
+        extract_fasta_per_species_for_full_aln(input_fasta)
 
-                //run_colabfold(aln_input,params.db)
-        run_alns(aln_input, params.mode)
-        extract_fasta_per_species_for_full_aln.out.combine(run_alns.out.code_name.groupTuple().map{it -> [it[0], it[1][0]]}, by:0).set{run_full_alns_input}
-        run_full_alns(run_full_alns_input, params.mode)
-        run_phylo_full(run_full_alns.out.full_aln, params.mode)
+        //1   run_alns(aln_input, params.mode)
+        //1   extract_fasta_per_species_for_full_aln.out.combine(run_alns.out.code_name.groupTuple().map{it -> [it[0], it[1][0]]}, by:0).set{run_full_alns_input}
+        //1   run_full_alns(run_full_alns_input, params.mode)
+        //1   run_phylo_full(run_full_alns.out.full_aln, params.mode)
         //run_phylo_recon(run_full_alns.out.transpose(),params.mode)
         //run_alns.out.aln_output.filter(~/^((?!MOUSE_domain).)*$/).groupTuple().set{alns_grouped}
         //concatenate_alns(alns_grouped,params.mode,params.species_num)
@@ -143,7 +143,7 @@ workflow pfam_data_with_AF2 {
         
 }
 
-
+// TODO nout used so remove once sure
 workflow pfam_data_without_AF2 {
         extract_fasta_per_species(input_fasta,params.mode)
         extract_fasta_per_species.out.transpose().set{aln_input}

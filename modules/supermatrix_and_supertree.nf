@@ -1,45 +1,40 @@
 #!/usr/env nextflow
 
-nextflow.enable.dsl=2
 
+// for each family tuple, it gets a list of species id and genes id. 
+// Using these two information it will retain only the specified species files containing each only the speciefied gene sequences. 
 process extract_fasta_per_species {
-	label 'cpu'
+	label 'process_low'
         tag "${fam}"
-        publishDir "${fam}/results_without_mouse_10_samples/${mode}", mode: 'copy'
 
         input:
 	tuple val(fam), path(intersect), path(species), path(rest)
-        val mode
 
         output:
-        tuple val(fam), file("${fam}.*_domain_sequences_after_intersection.fasta")
+        tuple val(fam), file("${fam}.*_domain_sequences_after_intersection.fasta"), emit: selected_fasta
 
 	script:
         """
-
         extract_intersecting_seq.pl ${intersect} ${species} \$PWD -after ${fam}
-
         """
 }
 
+
+// does exactlòy what the above does but puts everything into a single file and changes the header ids to be uniquea nd species specific.
 process extract_fasta_per_species_for_full_aln {
-	label 'cpu'
+	label 'process_low'
         tag "${fam}"
-        publishDir "${fam}/results_without_mouse_10_samples/${mode}", mode: 'copy'
 
         input:
 	tuple val(fam), path(intersect), path(species), path(rest)
-        val mode
 
         output:
-        tuple val(fam), path("${intersect}"), path("${species}"), file("${fam}.domain_sequences_prior_after_intersection.fasta")
+        tuple val(fam), path("${intersect}"), path("${species}"), path("${fam}.domain_sequences_prior_after_intersection.fasta"), emit: selected_fasta
 
 	script:
         """
-
         extract_intersecting_seq_prior.pl ${intersect} ${species} \$PWD -prior ${fam}
         cat ${fam}.*_domain_sequences_prior_after_intersection.fasta > ${fam}.domain_sequences_prior_after_intersection.fasta
-
         """
 }
 
