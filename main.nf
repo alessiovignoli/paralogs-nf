@@ -25,17 +25,6 @@ if (params.validate_params) {
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-/*
-params.input_fasta = "*.fasta"
-if (params.input_fasta) {
-	Channel
-	.fromPath(params.input_fasta)
-	.map { it -> [it.baseName,it]}
-	.set{in_fasta}
-}
-
-Channel.fromPath(params.AF2).map { it -> [it.toString().split('\\/')[-4],it]}.groupTuple().set{af2_models}
-*/
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -48,23 +37,31 @@ include { extract_fasta_per_species } from './modules/supermatrix_and_supertree.
 include { extract_fasta_per_species_for_full_aln } from './modules/supermatrix_and_supertree.nf'
 include { run_alns } from './modules/supermatrix_and_supertree.nf'
 include { run_full_alns } from './modules/supermatrix_and_supertree.nf'
-include { run_phylo_full } from './modules/supermatrix_and_supertree.nf'
 include { concatenate_alns } from './modules/supermatrix_and_supertree.nf'
 include { concatenate_alns as concatenate_struct_alns } from './modules/supermatrix_and_supertree.nf'
 
 include { extract_fasta_aln_per_species_sim } from './modules/supermatrix_and_supertree_sim.nf'
 include { extract_fasta_aln_per_species_sim_for_full_aln } from './modules/supermatrix_and_supertree_sim.nf'
 include { concatenate_alns_sim } from './modules/supermatrix_and_supertree_sim.nf'
+include { run_phylo_ML_full_sim as run_phylo_ML_full_aln_emp } from './modules/supermatrix_and_supertree_sim.nf'
+include { run_phylo_ML_full_sim as run_phylo_ML_supermatrix_aln_emp } from './modules/supermatrix_and_supertree_sim.nf'
+include { run_phylo_ML_full_sim as run_phylo_ML_supertree_aln_emp } from './modules/supermatrix_and_supertree_sim.nf'
 include { run_phylo_ML_full_sim as run_phylo_ML_full_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
 include { run_phylo_ML_full_sim as run_phylo_ML_supermatrix_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
 include { run_phylo_ML_full_sim as run_phylo_ML_supertree_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
+include { run_phylo_ME_full_sim as run_phylo_ME_full_aln_emp } from './modules/supermatrix_and_supertree_sim.nf'
+include { run_phylo_ME_full_sim as run_phylo_ME_supermatrix_aln_emp } from './modules/supermatrix_and_supertree_sim.nf'
+include { run_phylo_ME_full_sim as run_phylo_ME_supertree_aln_emp } from './modules/supermatrix_and_supertree_sim.nf'
 include { run_phylo_ME_full_sim as run_phylo_ME_full_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
 include { run_phylo_ME_full_sim as run_phylo_ME_supermatrix_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
 include { run_phylo_ME_full_sim as run_phylo_ME_supertree_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
 include { only_concatenate_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
-include { extract_species_submsa as extract_species_submsa_ML } from './modules/supermatrix_and_supertree_sim.nf'
-include { extract_species_submsa as extract_species_submsa_ME } from './modules/supermatrix_and_supertree_sim.nf'
-include { superfine } from './modules/supermatrix_and_supertree_sim.nf'
+include { extract_species_submsa as extract_species_submsa_ML_emp } from './modules/supermatrix_and_supertree_sim.nf'
+include { extract_species_submsa as extract_species_submsa_ML_sim } from './modules/supermatrix_and_supertree_sim.nf'
+include { extract_species_submsa as extract_species_submsa_ME_emp } from './modules/supermatrix_and_supertree_sim.nf'
+include { extract_species_submsa as extract_species_submsa_ME_sim } from './modules/supermatrix_and_supertree_sim.nf'
+include { superfine as superfine_emp } from './modules/supermatrix_and_supertree_sim.nf'
+include { superfine as superfine_sim } from './modules/supermatrix_and_supertree_sim.nf'
 include { superfine as superfine_supertree } from './modules/supermatrix_and_supertree_sim.nf'
 include { from_fasta_to_phylip } from './modules/supermatrix_and_supertree_sim.nf'
 
@@ -75,13 +72,6 @@ include { run_alphafold2 } from './modules/run_struct_model.nf'
 include { run_struct_aln } from './modules/run_struct_aln.nf'
 
 
-// TODO remove all the below
-
-//include { data_preparation } from './modules/data_preparation.nf'
-//include { extract_fasta_per_species; extract_fasta_per_species_for_full_aln; run_alns; run_full_alns; run_phylo_full; concatenate_alns; concatenate_alns as concatenate_struct_alns } from './modules/supermatrix_and_supertree.nf'
-//include { extract_fasta_aln_per_species_sim; extract_fasta_aln_per_species_sim_for_full_aln; concatenate_alns_sim; run_phylo_ML_full_sim as run_phylo_ML_full_aln_sim; run_phylo_ML_full_sim as run_phylo_ML_supermatrix_aln_sim; run_phylo_ME_full_sim as run_phylo_ME_full_aln_sim; run_phylo_ME_full_sim as run_phylo_ME_supermatrix_aln_sim; only_concatenate_aln_sim} from './modules/supermatrix_and_supertree_sim.nf'
-//include {run_colabfold; split_multi_fasta; run_alphafold2} from './modules/run_struct_model.nf'
-//include {run_struct_aln} from './modules/run_struct_aln.nf'
 
 
 //params.data = 'sim'
@@ -105,7 +95,7 @@ include { run_struct_aln } from './modules/run_struct_aln.nf'
 */
 
 
-workflow pfam_data_with_AF2 {
+workflow empirical_data {
 
         take:
         fasta
@@ -124,34 +114,69 @@ workflow pfam_data_with_AF2 {
                         .map { it -> [it.baseName.toString().split("\\.")[0], it]}
         input_fasta   = intersect.combine(ortho, by:0).combine(grouped_fasta, by:0)
         
-        // gathering the correct sequence inputs for each PFAM family
-        extract_fasta_per_species(input_fasta)
-        aln_input = extract_fasta_per_species.out.selected_fasta.transpose()
+        // BigTree compotutation
+        // gathering all the correct sequence inputs for each PFAM family and putting them into a single file.
         extract_fasta_per_species_for_full_aln(input_fasta)
-
-        //1   run_alns(aln_input, params.mode)
-        //1   extract_fasta_per_species_for_full_aln.out.combine(run_alns.out.code_name.groupTuple().map{it -> [it[0], it[1][0]]}, by:0).set{run_full_alns_input}
-        //1   run_full_alns(run_full_alns_input, params.mode)
-        //1   run_phylo_full(run_full_alns.out.full_aln, params.mode)
-        //run_phylo_recon(run_full_alns.out.transpose(),params.mode)
-        //run_alns.out.aln_output.filter(~/^((?!MOUSE_domain).)*$/).groupTuple().set{alns_grouped}
-        //concatenate_alns(alns_grouped,params.mode,params.species_num)
-                //run_colabfold.out.colabfold_models.combine(run_alns.out.code_name.groupTuple().map{it -> [it[0], it[1][0]]}, by:0).set{struct_aln_input}
-        //run_struct_aln(struct_aln_input)
-        //run_struct_aln.out.struct_aln_output.groupTuple().set{struct_alns_grouped}
-        //concatenate_struct_alns(struct_alns_grouped,'3DCoffee',params.species_num)
+        // creates the bigtree phylip MSA, using all paralogs ortholog informations. It creates a header id code based om code_file.
+        run_full_alns(extract_fasta_per_species_for_full_aln.out.selected_fasta)
+        // computes the ML tree from previous phylip alignment
+        run_phylo_ML_full_aln_emp(run_full_alns.out.full_aln)
+        // computes the ME tree from previous phylip alignmen
+        run_phylo_ME_full_aln_emp(run_full_alns.out.full_aln)
+        // extracting the submsas per species from the ML trees connecting the tree with the codename file that is nedded to raname the tree tips labels
+        extract_inputs_ML = run_phylo_ML_full_aln_emp.out.ml_bestree.join(
+                
+                // TODO check the below how to fix
+                
+                extract_fasta_aln_per_species_sim_for_full_aln.out.msa_code_name
+                
+                
+                
+                )
+        extract_species_submsa_ML_emp(extract_inputs_ML)
+        tobe_merged_ML = extract_species_submsa_ML_emp.out.species_subtrees.map{
+                it -> [(it[0] + " - ML"), it[1]]
+        }
+        // extracting the submsas per species from the ME trees connecting the tree with the codename file that is nedded to ranem the tree tips labels
+        extract_inputs_ME = run_phylo_ME_full_aln_sim.out.me_bestree.join(extract_fasta_aln_per_species_sim_for_full_aln.out.msa_code_name)
+        extract_species_submsa_ME_emp(extract_inputs_ME)
+        tobe_merged_ME = extract_species_submsa_ME_emp.out.species_subtrees.map{
+                it -> [(it[0] + " - ME"), it[1]]
+        }
+        // put in the same channel ME and ML extracted trees
+        ready_for_superfine = tobe_merged_ML.concat(tobe_merged_ME)
+        // use the superfine program to merge all species_submsa into one paralog tree
+        superfine_emp(ready_for_superfine)
         
-}
 
-// TODO nout used so remove once sure
-workflow pfam_data_without_AF2 {
-        extract_fasta_per_species(input_fasta,params.mode)
-        extract_fasta_per_species.out.transpose().set{aln_input}
-        run_alns(aln_input,params.mode)
-        run_alns.out.aln_output.groupTuple().set{alns_grouped}
-        concatenate_alns(alns_grouped,params.mode,params.species_num)
-        extract_fasta_per_species.out.transpose().filter(~/.*${params.ref}_domain_sequences_after_intersection.*/).combine(af2_models, by: 0).combine(run_alns.out.code_name.groupTuple().map{it -> [it[0], it[1][0]]}, by:0).set{struct_ref_input}
-        run_struct_ref(struct_ref_input,params.ref)
+
+        //input_fasta.view()
+        //extract_fasta_per_species_for_full_aln.out.selected_fasta.view()
+        
+        // gathering all the correct sequence inputs for each PFAM family
+        //extract_fasta_per_species(input_fasta)
+        //aln_input = extract_fasta_per_species.out.selected_fasta.transpose()
+        
+        
+        
+
+        // for each species in each family it alligns  the paralogs by themselves, (no orthologs relationships).
+        //run_alns(aln_input, params.mode)
+
+        
+
+        
+
+        // 
+        //run_phylo_full(run_full_alns.out.full_aln, params.mode)
+
+
+        // remove mouse paralogs fron the supermatrix supertree approach. this is dfone for checking for circularity in the analysis step.
+        //alns_grouped = run_alns.out.aln_output.filter(~/^((?!MOUSE_domain).)*$/).groupTuple()
+
+        // The following process will do the whole SuperMatrix and SuperTree computation. With 10 replication as well. it will generate all the relevant trees -> 500 (60 ST and 60 SM). 60 = 6 species/units * 10 replicates/samples. 
+        // concatenate_alns(alns_grouped, params.species_num)
+        
 }
 
 
@@ -172,36 +197,36 @@ workflow simulated_data {
         extract_fasta_aln_per_species_sim_for_full_aln(input_aln_sim.combine(orthologs_ids_sim))
         // computes the ML tree from previous phylip alignment
         run_phylo_ML_full_aln_sim(extract_fasta_aln_per_species_sim_for_full_aln.out.phylip_full_aln_sim)
-        // computes the ME tree previous phylip alignmen
+        // computes the ME tree from previous phylip alignmen
         run_phylo_ME_full_aln_sim(extract_fasta_aln_per_species_sim_for_full_aln.out.phylip_full_aln_sim)
-        // extracting the submsas per species from the ML trees connecting the tree with the codename file that is nedded to ranem the tree tips labels
+        // extracting the submsas per species from the ML trees connecting the tree with the codename file that is nedded to raname the tree tips labels
         extract_inputs_ML = run_phylo_ML_full_aln_sim.out.ml_bestree.join(extract_fasta_aln_per_species_sim_for_full_aln.out.msa_code_name)
-        extract_species_submsa_ML(extract_inputs_ML)
-        tobe_merged_ML = extract_species_submsa_ML.out.species_subtrees.map{
+        extract_species_submsa_ML_sim(extract_inputs_ML)
+        tobe_merged_ML = extract_species_submsa_ML_sim.out.species_subtrees.map{
                 it -> [(it[0] + " - ML"), it[1]]
         }
         // extracting the submsas per species from the ME trees connecting the tree with the codename file that is nedded to ranem the tree tips labels
         extract_inputs_ME = run_phylo_ME_full_aln_sim.out.me_bestree.join(extract_fasta_aln_per_species_sim_for_full_aln.out.msa_code_name)
-        extract_species_submsa_ME(extract_inputs_ME)
-        tobe_merged_ME = extract_species_submsa_ME.out.species_subtrees.map{
+        extract_species_submsa_ME_sim(extract_inputs_ME)
+        tobe_merged_ME = extract_species_submsa_ME_sim.out.species_subtrees.map{
                 it -> [(it[0] + " - ME"), it[1]]
         }
         // put in the same channel ME and ML extracted trees
         ready_for_superfine = tobe_merged_ML.concat(tobe_merged_ME)
         // use the superfine program to merge all species_submsa into one paralog tree
-        superfine(ready_for_superfine)
+        superfine_sim(ready_for_superfine)
 
         
         // from the family MSA extraxct  one msa in fasta format per species, each with all sequences in input fasta from the same species. Order of sequences is preserved.
         extract_fasta_aln_per_species_sim(input_aln_sim.combine(orthologs_ids_sim))
 
-        // SuperMatrix with all species and no shuffle.
+        // SuperMatrix with all species and no shuffle. Done for computation of running time.
         // gets the list of MSAs form each family extracted above (one family at the time) and concatenates all first sequences of all MSA in the list into the same line, same for the second and so on. Order of concatenation is not the order of mSA filenames in the list. The output is a single concatenated MSA in phylip format (columns are not shuffled yet). 
         only_concatenate_aln_sim(extract_fasta_aln_per_species_sim.out.all_aln_sim)
         run_phylo_ML_supermatrix_aln_sim(only_concatenate_aln_sim.out.phylip_only_concatenate_aln_sim)
         run_phylo_ME_supermatrix_aln_sim(only_concatenate_aln_sim.out.phylip_only_concatenate_aln_sim)
         
-        // SuperTree with all species and no shuffle.
+        // SuperTree with all species and no shuffle. Done for computation of running time.
         // gets the list of MSAs form each family extracted above (one family at the time) and for each MSA it computes the (paralog) tree. Then thanks to superfine it merges all  this (25) trees into a singel (paralog) tree.
         // the creation of the species paralogs happens in parallel for each of them (not a for loop). So first the above list is divided in family identifier + single species MSA.
         msas_for_supertree = extract_fasta_aln_per_species_sim.out.all_aln_sim.transpose()
@@ -228,7 +253,7 @@ workflow simulated_data {
 
 workflow {
 
-        if (params.data == 'pfam') {
+        if (params.data == 'emp') {
 
                 log.info """\
                 Paralogs Analysis - version 0.1
@@ -240,7 +265,7 @@ workflow {
                 MSA algorithm (TCoffee, PSICoffee, MAFFT-Ginsi) : ${params.mode}
                 """
                 .stripIndent()
-                pfam_data_with_AF2(params.fasta, params.intersecting_genes, params.orthologs_ids)
+                empirical_data(params.fasta, params.intersecting_genes, params.orthologs_ids)
 
         } else if (params.data == 'sim') {
 
@@ -256,7 +281,7 @@ workflow {
 
         } else {
 
-                log.info "the data parameter has to be either 'pfam' or 'sim', pointing to the type of analysis and data to be used. \ngiven : ${params.data}"
+                log.info "the data parameter has to be either 'emp' or 'sim', pointing to the type of analysis and data to be used. \ngiven : ${params.data}"
                 exit 1
 
         }
