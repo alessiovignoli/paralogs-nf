@@ -95,7 +95,7 @@ process extract_species_submsa {
 	script:
 	output_name = gene_family_tree.baseName + ".species_subtrees.nwk"
 	"""
-	extract_species_subtrees.R ${gene_family_tree} ${msa_code_name_file} ${orthologs_ids}  ${output_name}
+	extract_species_subtrees.R ${gene_family_tree} ${msa_code_name_file} ${orthologs_ids}  ${output_name} ${params.data}
 	"""
 
 }

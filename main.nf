@@ -39,6 +39,7 @@ include { run_alns } from './modules/supermatrix_and_supertree.nf'
 include { run_full_alns } from './modules/supermatrix_and_supertree.nf'
 include { concatenate_alns } from './modules/supermatrix_and_supertree.nf'
 include { concatenate_alns as concatenate_struct_alns } from './modules/supermatrix_and_supertree.nf'
+include { remove_ref_species } from './modules/supermatrix_and_supertree.nf'
 
 include { extract_fasta_aln_per_species_sim } from './modules/supermatrix_and_supertree_sim.nf'
 include { extract_fasta_aln_per_species_sim_for_full_aln } from './modules/supermatrix_and_supertree_sim.nf'
@@ -65,6 +66,7 @@ include { superfine as superfine_sim } from './modules/supermatrix_and_supertree
 include { superfine as superfine_supertree } from './modules/supermatrix_and_supertree_sim.nf'
 include { from_fasta_to_phylip } from './modules/supermatrix_and_supertree_sim.nf'
 
+
 include { run_colabfold } from './modules/run_struct_model.nf'
 include { split_multi_fasta } from './modules/run_struct_model.nf'
 include { run_alphafold2 } from './modules/run_struct_model.nf'
@@ -72,20 +74,10 @@ include { run_alphafold2 } from './modules/run_struct_model.nf'
 include { run_struct_aln } from './modules/run_struct_aln.nf'
 
 
+// this is separated from the rest because it might be temporary work
 
 
-//params.data = 'sim'
-//params.db = "/users/cn/abaltzis/db/colabfolddb"
-//params.ref = "MOUSE"
-//params.species_num = 6
-//params.mode = 'tcoffee'
-//params.orthologs_ids = "PF*/PF*.orthologs_org_ids_to_concatenate"
-//params.fasta = "PF*/PF*_domain_sequences_intersect_with_ref_after_OMA.fasta"
-//params.intersecting_genes = "PF*/PF*.intersecting_genes"
-//params.AF2 = "PF*/results/AF2/*.pdb"
-//params.species_num_sim = 25
-//params.input_sim = "*.ma"
-//params.orthologs_ids_sim = "orthologs_org_ids_to_concatenate"
+
 
 
 /*
@@ -123,22 +115,14 @@ workflow empirical_data {
         run_phylo_ML_full_aln_emp(run_full_alns.out.full_aln)
         // computes the ME tree from previous phylip alignmen
         run_phylo_ME_full_aln_emp(run_full_alns.out.full_aln)
-        // extracting the submsas per species from the ML trees connecting the tree with the codename file that is nedded to raname the tree tips labels
-        extract_inputs_ML = run_phylo_ML_full_aln_emp.out.ml_bestree.join(
-                
-                // TODO check the below how to fix
-                
-                extract_fasta_aln_per_species_sim_for_full_aln.out.msa_code_name
-                
-                
-                
-                )
+        // extracting the submsas per species from the ML trees connecting the tree with the codename file and species names that are nedded to raname the tree tips labels
+        extract_inputs_ML = run_phylo_ML_full_aln_emp.out.ml_bestree.join(run_full_alns.out.msa_code_name).join(ortho)
         extract_species_submsa_ML_emp(extract_inputs_ML)
         tobe_merged_ML = extract_species_submsa_ML_emp.out.species_subtrees.map{
                 it -> [(it[0] + " - ML"), it[1]]
         }
         // extracting the submsas per species from the ME trees connecting the tree with the codename file that is nedded to ranem the tree tips labels
-        extract_inputs_ME = run_phylo_ME_full_aln_sim.out.me_bestree.join(extract_fasta_aln_per_species_sim_for_full_aln.out.msa_code_name)
+        extract_inputs_ME = run_phylo_ME_full_aln_emp.out.me_bestree.join(run_full_alns.out.msa_code_name).join(ortho)
         extract_species_submsa_ME_emp(extract_inputs_ME)
         tobe_merged_ME = extract_species_submsa_ME_emp.out.species_subtrees.map{
                 it -> [(it[0] + " - ME"), it[1]]
@@ -148,7 +132,14 @@ workflow empirical_data {
         // use the superfine program to merge all species_submsa into one paralog tree
         superfine_emp(ready_for_superfine)
         
+        
+        // BigTree compotutation but without the reference species sequences (aka params.ref).
+        // process are aliased and repeated for simplicity while computing running time in analysis step.
+        // remove the keyword ref from all relevant files.
+        remove_ref_species(input_fasta)
 
+
+        remove_ref_species.out.no_ref.view()
 
         //input_fasta.view()
         //extract_fasta_per_species_for_full_aln.out.selected_fasta.view()

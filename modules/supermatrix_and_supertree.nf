@@ -78,7 +78,7 @@ process run_full_alns {
 
         output:
         tuple val(fam), path("${output_alns_phy}"), emit: full_aln
-        path ("full_aln.code_name")
+        tuple val(fam), path("full_aln.code_name"), emit: msa_code_name
 
         script:
         output_alns = fasta.baseName + "_full.fasta_aln"
@@ -90,6 +90,24 @@ process run_full_alns {
         t_coffee -other_pg seq_reformat -in ${output_alns} -output code_name > full_aln.code_name
         t_coffee -other_pg seq_reformat -code full_aln.code_name -in ${output_alns} > ${output_alns_coded}
         t_coffee -other_pg seq_reformat -in ${output_alns_coded} -output phylip_aln > ${output_alns_phy}
+        """
+}
+
+
+// it simply removes the reference species keyword fromn the list of species, while returning the same tuple.
+process remove_ref_species {
+        label 'process_low'
+        tag "${fam}"
+
+        input:
+	tuple val(fam), path(intersect), path(species), path(rest)
+
+        output:
+        tuple val(fam), path(intersect), path("*_no_ref"), path(rest), emit: no_ref
+
+        script:
+        """
+        sed "/${params.ref}/d" ${species} > ${species}_no_ref
         """
 }
 

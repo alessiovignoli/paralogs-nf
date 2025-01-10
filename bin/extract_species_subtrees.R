@@ -13,15 +13,21 @@ library(phytools)
 parse_args <- function() {
   args <- commandArgs(trailingOnly = TRUE)
   
-  if (length(args) < 3) {
-    stop("Usage: script.R <BigTree file> <mapping file> <species file> <output file>", call. = FALSE)
+  if (length(args) < 5) {
+    stop("Usage: script.R <BigTree file> <mapping file> <species file> <output file> <mode>", call. = FALSE)
+  }
+  
+  mode <- args[5]
+  if (!(mode %in% c("emp", "sim"))) {
+    stop("<mode> must be either 'emp' or 'sim'", call. = FALSE)
   }
   
   list(
     bigtree_file = args[1],
     mapping_file = args[2],
     species_file = args[3],
-    output_file = args[4]
+    output_file = args[4],
+    mode = mode
   )
 }
 
@@ -35,6 +41,7 @@ main <- function() {
   mapping_file <- args$mapping_file
   species_file <- args$species_file
   output_file <- args$output_file
+  mode <- args$mode
   
   # Read the BigTree tree and unroot it
   full_aln_tree <- read.tree(bigtree_file)
@@ -57,8 +64,15 @@ main <- function() {
   # Iterate over species and extract paralog subtrees
   for (species in orgs$V1) {
     
-    # Get the tips that match the species name
-    tips_to_keep <- grep(paste0("^", species), full_aln_tree$tip.label, perl = TRUE)
+    # Get the tips that match the species name. two different ways of doing that based on the mode.
+    # in sim mode the mapping is species_<num>. while in emp mode the mapping key is <gene_name>_species_<num>.
+    # in one case is enought to rely on presence while in the other it needs to be more stringent.
+    tips_to_keep <- NULL
+    if (mode == "emp") {
+      tips_to_keep <- grep(species, full_aln_tree$tip.label, perl = TRUE)
+    } else {
+      tips_to_keep <- grep(paste0("^", species), full_aln_tree$tip.label, perl = TRUE)
+    }
     
     # Extract and unroot the subtree for this species
     test_subtree <- keep.tip(full_aln_tree, tips_to_keep)
