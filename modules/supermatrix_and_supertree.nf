@@ -104,6 +104,7 @@ process remove_ref_species {
 
         output:
         tuple val(fam), path(intersect), path("*_no_ref"), path(rest), emit: no_ref
+        tuple val(fam), path("*_no_ref"), emit: modified_ortho
 
         script:
         """

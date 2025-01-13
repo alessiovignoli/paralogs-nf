@@ -74,11 +74,15 @@ include { run_alphafold2 } from './modules/run_struct_model.nf'
 include { run_struct_aln } from './modules/run_struct_aln.nf'
 
 
-// this is separated from the rest because it might be temporary work
-
-
-
-
+// this is separated from the rest because it might be temporary work.
+// this are the alias for the BigTree without ref computation in the empirical step.
+include { extract_fasta_per_species_for_full_aln as extract_fasta_per_species_for_full_aln_no_ref } from './modules/supermatrix_and_supertree.nf'
+include { run_full_alns as run_full_alns_no_ref } from './modules/supermatrix_and_supertree.nf'
+include { run_phylo_ML_full_sim as run_phylo_ML_full_aln_emp_no_ref } from './modules/supermatrix_and_supertree_sim.nf'
+include { run_phylo_ME_full_sim as run_phylo_ME_full_aln_emp_no_ref } from './modules/supermatrix_and_supertree_sim.nf'
+include { extract_species_submsa as extract_species_submsa_ML_emp_no_ref } from './modules/supermatrix_and_supertree_sim.nf'
+include { extract_species_submsa as extract_species_submsa_ME_emp_no_ref } from './modules/supermatrix_and_supertree_sim.nf'
+include { superfine as superfine_emp_no_ref } from './modules/supermatrix_and_supertree_sim.nf'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -134,29 +138,36 @@ workflow empirical_data {
         
         
         // BigTree compotutation but without the reference species sequences (aka params.ref).
-        // process are aliased and repeated for simplicity while computing running time in analysis step.
-        // remove the keyword ref from all relevant files.
+        // process are aliased and repeated for simplicity for the computing running time in analysis step.
+        // remove the keyword ref fromthe ortho file. Outputs directly what is needed by folowing processes.
         remove_ref_species(input_fasta)
-
-
-        remove_ref_species.out.no_ref.view()
-
-        //input_fasta.view()
-        //extract_fasta_per_species_for_full_aln.out.selected_fasta.view()
+        // repeat the same steps as in the BigTree approach as above from this point on. Basically do the same but without ref. 
+        extract_fasta_per_species_for_full_aln_no_ref(remove_ref_species.out.no_ref)
+        run_full_alns_no_ref(extract_fasta_per_species_for_full_aln_no_ref.out.selected_fasta)
+        run_phylo_ML_full_aln_emp_no_ref(run_full_alns_no_ref.out.full_aln)
+        run_phylo_ME_full_aln_emp_no_ref(run_full_alns_no_ref.out.full_aln)
+        extract_inputs_ML_no_ref = run_phylo_ML_full_aln_emp_no_ref.out.ml_bestree.join(run_full_alns_no_ref.out.msa_code_name).join(remove_ref_species.out.modified_ortho)
+        extract_species_submsa_ML_emp_no_ref(extract_inputs_ML_no_ref)
+        tobe_merged_ML_no_ref = extract_species_submsa_ML_emp_no_ref.out.species_subtrees.map{
+                it -> [(it[0] + " - ML"), it[1]]
+        }
+        extract_inputs_ME_no_ref = run_phylo_ME_full_aln_emp_no_ref.out.me_bestree.join(run_full_alns_no_ref.out.msa_code_name).join(remove_ref_species.out.modified_ortho)
+        extract_species_submsa_ME_emp_no_ref(extract_inputs_ME_no_ref)
+        tobe_merged_ME_no_ref = extract_species_submsa_ME_emp_no_ref.out.species_subtrees.map{
+                it -> [(it[0] + " - ME"), it[1]]
+        }
+        ready_for_superfine_no_ref = tobe_merged_ML_no_ref.concat(tobe_merged_ME_no_ref)
+        superfine_emp_no_ref(ready_for_superfine_no_ref)
+      
         
         // gathering all the correct sequence inputs for each PFAM family
         //extract_fasta_per_species(input_fasta)
         //aln_input = extract_fasta_per_species.out.selected_fasta.transpose()
         
-        
-        
 
         // for each species in each family it alligns  the paralogs by themselves, (no orthologs relationships).
         //run_alns(aln_input, params.mode)
-
-        
-
-        
+ 
 
         // 
         //run_phylo_full(run_full_alns.out.full_aln, params.mode)
