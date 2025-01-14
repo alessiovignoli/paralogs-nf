@@ -57,6 +57,7 @@ include { run_phylo_ME_full_sim as run_phylo_ME_full_aln_sim } from './modules/s
 include { run_phylo_ME_full_sim as run_phylo_ME_supermatrix_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
 include { run_phylo_ME_full_sim as run_phylo_ME_supertree_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
 include { only_concatenate_aln_sim } from './modules/supermatrix_and_supertree_sim.nf'
+include { only_concatenate_aln_sim as only_concatenate_aln_emp } from './modules/supermatrix_and_supertree_sim.nf'
 include { extract_species_submsa as extract_species_submsa_ML_emp } from './modules/supermatrix_and_supertree_sim.nf'
 include { extract_species_submsa as extract_species_submsa_ML_sim } from './modules/supermatrix_and_supertree_sim.nf'
 include { extract_species_submsa as extract_species_submsa_ME_emp } from './modules/supermatrix_and_supertree_sim.nf'
@@ -136,7 +137,6 @@ workflow empirical_data {
         // use the superfine program to merge all species_submsa into one paralog tree
         superfine_emp(ready_for_superfine)
         
-        
         // BigTree compotutation but without the reference species sequences (aka params.ref).
         // process are aliased and repeated for simplicity for the computing running time in analysis step.
         // remove the keyword ref fromthe ortho file. Outputs directly what is needed by folowing processes.
@@ -158,23 +158,21 @@ workflow empirical_data {
         }
         ready_for_superfine_no_ref = tobe_merged_ML_no_ref.concat(tobe_merged_ME_no_ref)
         superfine_emp_no_ref(ready_for_superfine_no_ref)
-      
         
-        // gathering all the correct sequence inputs for each PFAM family
-        //extract_fasta_per_species(input_fasta)
-        //aln_input = extract_fasta_per_species.out.selected_fasta.transpose()
-        
-
+        // Srtep in common to supermatrix and supertree. species alignment preparation.
+        // gathering all the correct sequence inputs for each PFAM family.
+        extract_fasta_per_species(input_fasta)
+        aln_input = extract_fasta_per_species.out.selected_fasta.transpose()
         // for each species in each family it alligns  the paralogs by themselves, (no orthologs relationships).
-        //run_alns(aln_input, params.mode)
- 
+        run_alns(aln_input, params.mode)
+        // remove mouse paralogs fron the supermatrix supertree approach. this is done to check for circularity in the analysis step.
+	alns_grouped = run_alns.out.aln_output.filter{ it -> !it.toString().contains("${params.ref}_domain") }.groupTuple()
 
-        // 
-        //run_phylo_full(run_full_alns.out.full_aln, params.mode)
-
-
-        // remove mouse paralogs fron the supermatrix supertree approach. this is dfone for checking for circularity in the analysis step.
-        //alns_grouped = run_alns.out.aln_output.filter(~/^((?!MOUSE_domain).)*$/).groupTuple()
+        // SuperMatrix with all species but not reference and no shuffle. Done for computation of running time.
+        // gets the list of MSAs form each family extracted above (one family at the time) and concatenates all first sequences of all MSA in the list into the same line, same for the second and so on. Order of concatenation is not the order of mSA filenames in the list. The output is a single concatenated MSA in phylip format (columns are not shuffled yet).
+	only_concatenate_aln_emp(alns_grouped)
+	run_phylo_ML_supermatrix_aln_emp(only_concatenate_aln_emp.out.phylip_only_concatenate_aln_sim)
+        run_phylo_ME_supermatrix_aln_emp(only_concatenate_aln_emp.out.phylip_only_concatenate_aln_sim)
 
         // The following process will do the whole SuperMatrix and SuperTree computation. With 10 replication as well. it will generate all the relevant trees -> 500 (60 ST and 60 SM). 60 = 6 species/units * 10 replicates/samples. 
         // concatenate_alns(alns_grouped, params.species_num)
@@ -219,7 +217,7 @@ workflow simulated_data {
         superfine_sim(ready_for_superfine)
 
         
-        // from the family MSA extraxct  one msa in fasta format per species, each with all sequences in input fasta from the same species. Order of sequences is preserved.
+        // from the family MSA extraxct one msa in fasta format per species, each with all sequences in input fasta from the same species. Order of sequences is preserved.
         extract_fasta_aln_per_species_sim(input_aln_sim.combine(orthologs_ids_sim))
 
         // SuperMatrix with all species and no shuffle. Done for computation of running time.
