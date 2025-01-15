@@ -64,9 +64,10 @@ include { extract_species_submsa as extract_species_submsa_ME_emp } from './modu
 include { extract_species_submsa as extract_species_submsa_ME_sim } from './modules/supermatrix_and_supertree_sim.nf'
 include { superfine as superfine_emp } from './modules/supermatrix_and_supertree_sim.nf'
 include { superfine as superfine_sim } from './modules/supermatrix_and_supertree_sim.nf'
-include { superfine as superfine_supertree } from './modules/supermatrix_and_supertree_sim.nf'
-include { from_fasta_to_phylip } from './modules/supermatrix_and_supertree_sim.nf'
-
+include { superfine as superfine_supertree_emp } from './modules/supermatrix_and_supertree_sim.nf'
+include { superfine as superfine_supertree_sim } from './modules/supermatrix_and_supertree_sim.nf'
+include { from_fasta_to_phylip as from_fasta_to_phylip_emp } from './modules/supermatrix_and_supertree_sim.nf'
+include { from_fasta_to_phylip as from_fasta_to_phylip_sim } from './modules/supermatrix_and_supertree_sim.nf'
 
 include { run_colabfold } from './modules/run_struct_model.nf'
 include { split_multi_fasta } from './modules/run_struct_model.nf'
@@ -169,10 +170,29 @@ workflow empirical_data {
 	alns_grouped = run_alns.out.aln_output.filter{ it -> !it.toString().contains("${params.ref}_domain") }.groupTuple()
 
         // SuperMatrix with all species but not reference and no shuffle. Done for computation of running time.
-        // gets the list of MSAs form each family extracted above (one family at the time) and concatenates all first sequences of all MSA in the list into the same line, same for the second and so on. Order of concatenation is not the order of mSA filenames in the list. The output is a single concatenated MSA in phylip format (columns are not shuffled yet).
+        // gets the list of MSAs from each family extracted above (one family at the time) and concatenates all first sequences of all MSA in the list into the same line, same for the second and so on. Order of concatenation is not the order of mSA filenames in the list. The output is a single concatenated MSA in phylip format (columns are not shuffled yet).
 	only_concatenate_aln_emp(alns_grouped)
 	run_phylo_ML_supermatrix_aln_emp(only_concatenate_aln_emp.out.phylip_only_concatenate_aln_sim)
         run_phylo_ME_supermatrix_aln_emp(only_concatenate_aln_emp.out.phylip_only_concatenate_aln_sim)
+
+        // SuperTree with all species  but not reference  and no shuffle. Done for computation of running time.
+        // gets the list of MSAs form each family extracted above (one family at the time) and for each MSA it computes the (paralog) tree. Then thanks to superfine it merges all  this (6) trees into a single (paralog) tree.
+        // the creation of the species paralogs happens in parallel for each of them (not a for loop). So first the above list is divided in family identifier + single species MSA.
+        msas_for_supertree = alns_grouped.transpose()
+        // then each msa is made into phylip format and then the species paralog tree is made either using ME or ML.
+        from_fasta_to_phylip_emp(msas_for_supertree)
+        run_phylo_ML_supertree_aln_emp(from_fasta_to_phylip_emp.out.phylip)
+        run_phylo_ME_supertree_aln_emp(from_fasta_to_phylip_emp.out.phylip)
+        // now put toghther all ML trees coming from the same family, do the same for ME. Then merge the two channles
+        tobe_merged_supertree_ML = run_phylo_ML_supertree_aln_emp.out.ml_bestree.map{
+                it -> [(it[0] + " - ML"), it[1]]
+        }.groupTuple()
+        tobe_merged_supertree_ME = run_phylo_ME_supertree_aln_emp.out.me_bestree.map{
+                it -> [(it[0] + " - ME"), it[1]]
+        }.groupTuple()
+        ready_for_superfine_supertree = tobe_merged_supertree_ML.concat(tobe_merged_supertree_ME)
+        // finally merge together using superfine all paralog trees from the same family.
+        superfine_supertree_emp(ready_for_superfine_supertree)
 
         // The following process will do the whole SuperMatrix and SuperTree computation. With 10 replication as well. it will generate all the relevant trees -> 500 (60 ST and 60 SM). 60 = 6 species/units * 10 replicates/samples. 
         // concatenate_alns(alns_grouped, params.species_num)
@@ -231,9 +251,9 @@ workflow simulated_data {
         // the creation of the species paralogs happens in parallel for each of them (not a for loop). So first the above list is divided in family identifier + single species MSA.
         msas_for_supertree = extract_fasta_aln_per_species_sim.out.all_aln_sim.transpose()
         // then each msa is made into phylip format and then the species paralog tree is made either using ME or ML.
-        from_fasta_to_phylip(msas_for_supertree)
-        run_phylo_ML_supertree_aln_sim(from_fasta_to_phylip.out.phylip)
-        run_phylo_ME_supertree_aln_sim(from_fasta_to_phylip.out.phylip)
+        from_fasta_to_phylip_sim(msas_for_supertree)
+        run_phylo_ML_supertree_aln_sim(from_fasta_to_phylip_sim.out.phylip)
+        run_phylo_ME_supertree_aln_sim(from_fasta_to_phylip_sim.out.phylip)
         // now put toghther all ML trees coming from the same family, do the same for ME. Then merge the two channles
         tobe_merged_supertree_ML = run_phylo_ML_supertree_aln_sim.out.ml_bestree.map{
                 it -> [(it[0] + " - ML"), it[1]]
@@ -243,7 +263,7 @@ workflow simulated_data {
         }.groupTuple()
         ready_for_superfine_supertree = tobe_merged_supertree_ML.concat(tobe_merged_supertree_ME)
         // finally merge together using superfine all paralog trees from the same family.
-        superfine_supertree(ready_for_superfine_supertree)
+        superfine_supertree_sim(ready_for_superfine_supertree)
 
 
         // The following process will do the whole SuperMatrix and SuperTree computation. With 10 replication as well. it will generate all the relevant trees -> 500 (250 ST and 250 SM). 250 = 25 species/units * 10 replicates/samples. 
