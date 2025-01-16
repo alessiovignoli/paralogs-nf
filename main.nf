@@ -195,7 +195,7 @@ workflow empirical_data {
         superfine_supertree_emp(ready_for_superfine_supertree)
 
         // The following process will do the whole SuperMatrix and SuperTree computation. With 10 replication as well. it will generate all the relevant trees -> 500 (60 ST and 60 SM). 60 = 6 species/units * 10 replicates/samples. 
-        // concatenate_alns(alns_grouped, params.species_num)
+        concatenate_alns(alns_grouped, params.species_num)
         
 }
 

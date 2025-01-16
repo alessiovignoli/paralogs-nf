@@ -78,8 +78,16 @@ main <- function() {
     test_subtree <- keep.tip(full_aln_tree, tips_to_keep)
     test_subtree <- unroot(test_subtree)
     
-    # Rename the tips
-    test_subtree$tip.label <- gsub(paste0(species, "_"), "Seq_", test_subtree$tip.label)
+    print(sapply(strsplit(test_subtree$tip.label, split="_"), "[", 1))
+
+    # Rename the tips. once again a different schema depending on the mode.
+    # in sim mode the tip label will be in the form of Seq_<num>.
+    # in emp mode the tip label will be in the form of Seq_<gene_name>.
+    if (mode == "emp") {
+      test_subtree$tip.label <- paste0("Seq_", sapply(strsplit(test_subtree$tip.label, split="_"), "[", 1))
+    } else {
+      test_subtree$tip.label <- gsub(paste0(species, "_"), "Seq_", test_subtree$tip.label)
+    }
     
     # Change class of tree and add it to the collection
     test_subtree <- as.multiPhylo(test_subtree)
