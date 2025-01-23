@@ -201,11 +201,9 @@ workflow empirical_data {
         // remove mouse paralogs fron the supermatrix supertree approach. this is done to check for circularity in the analysis step.
 	alns_grouped = run_alns.out.aln_output.filter{ it -> !it.toString().contains("${params.ref}_domain") }.groupTuple()
 
-        run_full_alns_no_ref.out.fasta_full_aln.view()
-        /*
         // The following process will do the whole SuperMatrix and SuperTree computation. With 10 replication as well. it will generate all the relevant trees -> 500 (60 ST and 60 SM). 60 = 6 species/units * 10 replicates/samples. 
         concatenate_alns(alns_grouped, params.species_num)
-        */
+
 }
 
 
