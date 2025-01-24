@@ -20,7 +20,7 @@ process extract_fasta_per_species {
 }
 
 
-// does exactlòy what the above does but puts everything into a single file and changes the header ids to be uniquea nd species specific.
+// does exactlòy what the above does but puts everything into a single file and changes the header ids to be uniquea and species specific.
 process extract_fasta_per_species_for_full_aln {
 	label 'process_low'
         tag "${fam}"
@@ -38,6 +38,50 @@ process extract_fasta_per_species_for_full_aln {
         """
 }
 
+// takes a MSA and a list of species names, -> one msa in fasta format per species, each with all sequences in input fasta from the same species. Order of sequences is preserved.
+process extract_fasta_aln_per_species_emp {
+	label 'process_low'
+	tag "${fam}"
+
+	input:
+	tuple val(fam), path(init_aln), path(orthologs_ids)
+
+	output:
+	tuple val(fam), path("${fam}*.fasta_aln"), emit: species_aln
+
+	script:
+        prefix = init_aln.baseName
+	"""
+	# Loop through each ID in the ID file
+	while read -r ID; do
+		# Create the output file for the current ID
+		OUTPUT_FILE="${prefix}_\${ID}.fasta_aln"
+
+		# Use awk to extract the headers containing the ID and their sequences 
+                # remove the id (species) from the header and prepend it with "Seq_"
+		awk -v id="\$ID"  -v header_prefix="\$OUTPUT_FILE" '
+		BEGIN { found=0; }
+		/^>/ {
+			if (index(\$0, id) > 0) { 
+				found=1;
+                                gsub(id, "", \$0);
+                                gsub("__", "_", \$0);
+                                gsub(">", ">Seq_", \$0);
+				print \$0 > header_prefix;
+			} else {
+				found=0;
+			}
+		}
+		!/^>/ {
+			if (found) { 
+				print \$0 > header_prefix;
+			}
+		}
+		' "${init_aln}"
+
+	done < ${orthologs_ids}
+	"""
+}
 
 // depending on the alligner asked (aka mode). it executes a different template file present in the template dir.
 // but all in all it alligns and renames the fasta in input. 
@@ -79,6 +123,7 @@ process run_full_alns {
         output:
         tuple val(fam), path("${output_alns_phy}"), emit: full_aln
         tuple val(fam), path("full_aln.code_name"), emit: msa_code_name
+        tuple val(fam), path("${output_alns}"), emit: fasta_full_aln
 
         script:
         output_alns = fasta.baseName + "_full.fasta_aln"
