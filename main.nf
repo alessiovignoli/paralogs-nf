@@ -87,6 +87,10 @@ include { extract_species_submsa as extract_species_submsa_ML_emp_no_ref } from 
 include { extract_species_submsa as extract_species_submsa_ME_emp_no_ref } from './modules/supermatrix_and_supertree_sim.nf'
 include { superfine as superfine_emp_no_ref } from './modules/supermatrix_and_supertree_sim.nf'
 
+// this is separated from the rest because it might be temporary work.
+// analysis of mislabeled paralogs
+include { swap_seq_in_fam } from './modules/supermatrix_and_supertree_sim.nf'
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN ALL WORKFLOWS
@@ -300,7 +304,7 @@ workflow swapped_data {
         //set_sequence_swap   = channel.of(2, 3, 4, 5, 6 ,7, 8, 9, 10)
         //combination_keys    = set_species_to_swap.combine(set_sequence_swap)
 
-        combination_keys = channel.of([1, 1], [1, 2])
+        combination_keys = channel.of([1, 2], [10, 10])
 
         // create the input for the swapper function, for each family there will be 90 
         // possible swappping combinations. Each of wich has to randomly choose which species MSA to add swaps to
@@ -308,7 +312,8 @@ workflow swapped_data {
                 extract_fasta_aln_per_species_sim.out.all_aln_sim
                 ).map { it -> [it[2], it[0], it[1], it[3]]}
 
-        to_be_swap.view()
+        // actually swap how many species and how many sequences as required from combination key
+        swap_seq_in_fam(to_be_swap)
 
 }
 

@@ -158,6 +158,25 @@ process only_concatenate_aln_sim {
 }
 
 
+process swap_seq_in_fam {
+	label 'process_low'
+	tag "${fam}"
+
+	input:
+	tuple val(fam), val(num_species_swap), val(num_swap), path(all_aln)
+
+	output:
+	//tuple val(fam), path("${fam}_supermatrix.phylip"), emit: phylip_only_concatenate_aln_sim
+
+	script:
+	"""
+	for i in \$(ls | sort -R | head -n ${num_species_swap}); do
+		echo  ${num_swap} \$i 
+	done
+	"""
+}
+
+
 // The following process will do the whole SuperMatrix and SuperTree computation. With 10 replication as well.
 // concatenate_aln.py  will do the following:
 // create all the MSA units and single units in phylip format. From the starting species alignments by shuffling and drowing columns.
