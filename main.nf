@@ -278,6 +278,40 @@ workflow simulated_data {
         
 }
 
+workflow swapped_data {
+
+        take:
+        input_sim
+        orthologs_ids
+
+        main:
+        // first prepare the inputs
+        input_aln_sim     = Channel.fromPath(input_sim)
+                            .map{it -> [it.baseName, it]}
+        orthologs_ids_sim = Channel.fromPath(orthologs_ids)
+        
+        // from the family MSA extraxct one msa in fasta format per species, each with all sequences in input fasta from the same species. Order of sequences is preserved.
+        extract_fasta_aln_per_species_sim(input_aln_sim.combine(orthologs_ids_sim))
+
+        // 2 sequences could be mislabeld (swapped) in 1 species, or in 2 species and so on
+        // the following lines will take care of creating all possibilities for swap up to 10
+        // this pair combination will take care of also being used as a key for a given swap "experiment"
+        //set_species_to_swap = channel.of(1, 2, 3, 4, 5, 6 ,7, 8, 9, 10)
+        //set_sequence_swap   = channel.of(2, 3, 4, 5, 6 ,7, 8, 9, 10)
+        //combination_keys    = set_species_to_swap.combine(set_sequence_swap)
+
+        combination_keys = channel.of([1, 1], [1, 2])
+
+        // create the input for the swapper function, for each family there will be 90 
+        // possible swappping combinations. Each of wich has to randomly choose which species MSA to add swaps to
+        to_be_swap = combination_keys.combine(
+                extract_fasta_aln_per_species_sim.out.all_aln_sim
+                ).map { it -> [it[2], it[0], it[1], it[3]]}
+
+        to_be_swap.view()
+
+}
+
 workflow {
 
         if (params.data == 'emp') {
@@ -305,10 +339,25 @@ workflow {
                 """
                 .stripIndent()
                 simulated_data(params.input_sim, params.orthologs_ids_sim)
+        
+        } else if (params.data == 'swa') {
+
+                log.info """\
+                Paralogs Analysis - version 0.1
+                =====================================
+                Input simulated paralogs datasets (FASTA)       : ${params.input_sim}
+                Number of species		                : ${params.species_num_sim}
+                Input species names		                : ${params.orthologs_ids_sim}
+                number of paralogs                              : ${params.paralog_num_sim}
+                number of max species to swap sequence          : 10
+                number of max sequences swapped per species     : 10
+                """
+                .stripIndent()
+                swapped_data(params.input_sim, params.orthologs_ids_sim)
 
         } else {
 
-                log.info "the data parameter has to be either 'emp' or 'sim', pointing to the type of analysis and data to be used. \ngiven : ${params.data}"
+                log.info "the data parameter has to be either 'emp', 'sim' or 'swa', pointing to the type of analysis and data to be used. \ngiven : ${params.data}"
                 exit 1
 
         }
