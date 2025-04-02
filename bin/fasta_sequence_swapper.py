@@ -9,7 +9,7 @@ def get_args():
     """get the arguments when using from the commandline"""
 
     parser = argparse.ArgumentParser(description="Launch fasta sequence swapper. It keeps the header as they are preserving they're order to, but it swaps a given number of sequences around the file randomly.")
-    parser.add_argument("-i", "--input", type=str, required=True, metavar="FILE", help="Path to input fasta file. Sequences have to be on one line.")
+    parser.add_argument("-i", "--input", type=str, required=True, metavar="FILE", help="Path to input fasta file.")
     parser.add_argument("-o", "--output", type=str, required=True, metavar="FILE", help="Path to output file to write the new swapped fasta.")
     parser.add_argument("-n", "--nseq", type=int, required=True, nargs='?', const=None, default=None, metavar="NUM_SEQ_IN_FILE", help="The number of sequences present in the file. This has to be known a priori so that sequences can be swapped randomly by drawing numbers from 1 to NUM_SEQ_IN_FILE.")
     parser.add_argument("-s", "--swaps", type=int, required=True, nargs='?', const=None, default=None, metavar="NUM_OF_SWAPS", help="The number of sequences to swap around. Swaps are made so that they do not reverse each other. If set to 5, then 5 sequences are selected and swapped between themselves.")
@@ -48,27 +48,36 @@ def SeqSwapper(input_fasta : str,
     # the sequences that have to be swapped and save them to buffer dict with new index as key
     swap_seq = {}
     with open(input_fasta, 'r') as infasta:
-        i = 0
+        i = -1
         for first_iter_line in infasta:
-            if first_iter_line[0] != ">":
-                if i in index_swap:
-                    swap_seq[i] = first_iter_line.rstrip()
+            if first_iter_line[0] == ">":
                 i += 1
+            else:
+                if i in index_swap:
+                    if i in swap_seq:
+                        swap_seq[i] += first_iter_line
+                    else:
+                        swap_seq[i] = first_iter_line
 
     # write to output all header and non swapped sequences as they are and
     # the swapped seq in the new positions
     with open(input_fasta, 'r') as infasta, open(output_fasta, 'w') as outfasta:
-        j = 0
+        j = -1
+        still_in_seq = False
         for second_iter_line in infasta:
             if second_iter_line[0] == ">":
                 outfasta.write(second_iter_line)
+                j += 1
+                still_in_seq = False
+            elif still_in_seq:
+                continue
             else:
                 if j in index_swap:
-                    swapped_line = swap_seq[swap_index_mapping[j]] + "\n"
+                    swapped_line = swap_seq[swap_index_mapping[j]]
                     outfasta.write(swapped_line)
+                    still_in_seq = True
                 else:
                     outfasta.write(second_iter_line)
-                j += 1
 
 
     print(swap_index_mapping)

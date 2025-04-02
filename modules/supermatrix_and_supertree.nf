@@ -6,6 +6,10 @@
 process extract_fasta_per_species {
 	label 'process_low'
         tag "${fam}"
+        container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+                'docker://athbaltzis/paralogs:v0.10' :
+                'athbaltzis/paralogs:v0.10' }"
+
 
         input:
 	tuple val(fam), path(intersect), path(species), path(rest)
@@ -24,6 +28,9 @@ process extract_fasta_per_species {
 process extract_fasta_per_species_for_full_aln {
 	label 'process_low'
         tag "${fam}"
+        container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+                'docker://athbaltzis/paralogs:v0.10' :
+                'athbaltzis/paralogs:v0.10' }"
 
         input:
 	tuple val(fam), path(intersect), path(species), path(rest)
@@ -42,6 +49,9 @@ process extract_fasta_per_species_for_full_aln {
 process extract_fasta_aln_per_species_emp {
 	label 'process_low'
 	tag "${fam}"
+        container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+                'docker://athbaltzis/paralogs:v0.10' :
+                'athbaltzis/paralogs:v0.10' }"
 
 	input:
 	tuple val(fam), path(init_aln), path(orthologs_ids)
@@ -88,6 +98,10 @@ process extract_fasta_aln_per_species_emp {
 process run_alns {
 	label 'process_low'
         tag "${fam} - ${mode}"
+        container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+                'docker://athbaltzis/paralogs:v0.10' :
+                'athbaltzis/paralogs:v0.10' }"
+        
 
         input:
         tuple val(fam), path(fasta)
@@ -116,6 +130,9 @@ process run_alns {
 process run_full_alns {
 	label 'process_medium'
         tag "${fam} - ${params.mode}"
+        container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+                'docker://athbaltzis/paralogs:v0.10' :
+                'athbaltzis/paralogs:v0.10' }"
 
         input:
         tuple val(fam), path(fasta)
@@ -143,6 +160,9 @@ process run_full_alns {
 process remove_ref_species {
         label 'process_low'
         tag "${fam}"
+        container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+                'docker://athbaltzis/paralogs:v0.10' :
+                'athbaltzis/paralogs:v0.10' }"
 
         input:
 	tuple val(fam), path(intersect), path(species), path(rest)
@@ -173,6 +193,9 @@ process remove_ref_species {
 process concatenate_alns {
 	label 'process_high'
         tag "${fam}"
+        container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+                'docker://athbaltzis/paralogs:v0.10' :
+                'athbaltzis/paralogs:v0.10' }"
 
         input:
         tuple val (fam), val(all_aln)

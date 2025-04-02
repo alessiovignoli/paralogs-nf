@@ -5,6 +5,9 @@
 process extract_fasta_aln_per_species_sim {
 	label 'process_low'
 	tag "${fam}"
+	container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'docker://athbaltzis/paralogs:v0.10' :
+        'athbaltzis/paralogs:v0.10' }"
 
 	input:
 	tuple val(fam), path(init_aln), path(orthologs_ids)
@@ -24,6 +27,10 @@ process extract_fasta_aln_per_species_sim {
 process extract_fasta_aln_per_species_sim_for_full_aln {
 	label 'process_low'
 	tag "${fam}"
+	container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'docker://athbaltzis/paralogs:v0.10' :
+        'athbaltzis/paralogs:v0.10' }"
+
 
 	input:
 	tuple val(fam), path(init_aln), path(orthologs_ids)
@@ -47,6 +54,10 @@ process extract_fasta_aln_per_species_sim_for_full_aln {
 process run_phylo_ML_full_sim {
 	label 'process_low'
 	tag "${fam}"
+	container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'docker://athbaltzis/paralogs:v0.10' :
+        'athbaltzis/paralogs:v0.10' }"
+
 
 	input:
 	tuple val(fam), path(phylip_aln)
@@ -67,6 +78,10 @@ process run_phylo_ML_full_sim {
 process run_phylo_ME_full_sim {
 	label 'process_low'
 	tag "${fam}"
+	container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'docker://athbaltzis/paralogs:v0.10' :
+        'athbaltzis/paralogs:v0.10' }"
+
 
 	input:
 	tuple val(fam), path(phylip_aln)
@@ -85,6 +100,10 @@ process run_phylo_ME_full_sim {
 process extract_species_submsa {
 	label 'process_low'
 	tag "${fam}"
+	container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'docker://alessiovignoli3/paralogs-nf:r_phylogeny' :
+        'alessiovignoli3/paralogs-nf:r_phylogeny' }"
+
 
 	input:
 	tuple val(fam), path(gene_family_tree), path(msa_code_name_file), path(orthologs_ids)
@@ -104,6 +123,10 @@ process extract_species_submsa {
 process superfine {
 	label 'process_low'
 	tag "${id}"
+	container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'docker://athbaltzis/paralogs:v0.10' :
+        'athbaltzis/paralogs:v0.10' }"
+
 
 	input:
 	tuple val(id), path(trees_tobe_merged)
@@ -125,6 +148,10 @@ process superfine {
 process from_fasta_to_phylip {
 	label 'process_low'
 	tag "${msa_fasta}"
+	container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'https://depot.galaxyproject.org/singularity/t-coffee:13.46.0.919e8c6b--hfc96bf3_0':
+        'quay.io/biocontainers/t-coffee:13.46.0.919e8c6b--hfc96bf3_0' }"
+
 
 	input:
 	tuple val(id), path(msa_fasta)
@@ -135,6 +162,7 @@ process from_fasta_to_phylip {
 	script:
 	output = ("${msa_fasta}".split("\\."))[0..-2].join(".") + ".phylip"
 	"""
+	export TEMP='./'
 	t_coffee -other_pg seq_reformat -in ${msa_fasta} -output phylip_aln > ${output}
 	"""
 }
@@ -144,6 +172,10 @@ process from_fasta_to_phylip {
 process only_concatenate_aln_sim {
 	label 'process_low'
 	tag "${fam}"
+	container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'docker://athbaltzis/paralogs:v0.10' :
+        'athbaltzis/paralogs:v0.10' }"
+
 
 	input:
 	tuple val(fam), val(all_aln)
@@ -161,6 +193,10 @@ process only_concatenate_aln_sim {
 process swap_seq_in_fam {
 	label 'process_low'
 	tag "${fam}"
+	container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'docker://athbaltzis/paralogs:v0.10' :
+        'athbaltzis/paralogs:v0.10' }"
+
 
 	input:
 	tuple val(fam), val(num_species_swap), val(num_swap), path(all_aln)
@@ -199,6 +235,10 @@ process swap_seq_in_fam {
 process concatenate_alns_sim {
 	label 'process_high'
 	tag "${fam}"
+	container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'docker://athbaltzis/paralogs:v0.10' :
+        'athbaltzis/paralogs:v0.10' }"
+
 
 	input:
 	tuple val(fam), val(all_aln)
