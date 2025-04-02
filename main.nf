@@ -315,6 +315,21 @@ workflow swapped_data {
         // actually swap how many species and how many sequences as required from combination key
         swap_seq_in_fam(to_be_swap)
 
+        // only_concatenate_aln_sim has only one keyword, so the parameters to the swap have to be added to the family name
+        to_be_concatenated = swap_seq_in_fam.out.swapped_fastas.map{
+                it -> [ it[0] + "_swap_" + it[1] + "_" + it[2], it[3]]
+        }
+
+        // SuperMatrix with all species and no shuffle. This section is done only on unit 25.
+        // gets the list of MSAs form each family extracted above (one family at the time) and concatenates all first sequences of all MSA in the list into the same line, same for the second and so on. Order of concatenation is not the order of mSA filenames in the list. The output is a single concatenated MSA in phylip format (columns are not shuffled yet). 
+        only_concatenate_aln_sim(to_be_concatenated)
+
+        only_concatenate_aln_sim.out.phylip_only_concatenate_aln_sim.view()
+        //run_phylo_ML_supermatrix_aln_sim(only_concatenate_aln_sim.out.phylip_only_concatenate_aln_sim)
+        //run_phylo_ME_supermatrix_aln_sim(only_concatenate_aln_sim.out.phylip_only_concatenate_aln_sim)
+
+        
+
 }
 
 workflow {

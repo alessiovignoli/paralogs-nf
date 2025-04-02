@@ -166,12 +166,19 @@ process swap_seq_in_fam {
 	tuple val(fam), val(num_species_swap), val(num_swap), path(all_aln)
 
 	output:
-	//tuple val(fam), path("${fam}_supermatrix.phylip"), emit: phylip_only_concatenate_aln_sim
+	// also inputs file have to be outputted since the swaaped once are chosen at random as subset
+	tuple val(fam), val(num_species_swap), val(num_swap), path("*fasta_aln*", includeInputs : true), emit: swapped_fastas
 
 	script:
 	"""
+	# the simlynk to input file that has been modified needs to go 
+	# so that the output can be a set of (25) files (number of species) 
 	for i in \$(ls | sort -R | head -n ${num_species_swap}); do
-		echo  ${num_swap} \$i 
+		fasta_sequence_swapper.py -i \$i \\
+			-o \$i.${num_species_swap}_${num_swap} \\
+			-n ${params.paralog_num_sim} \\
+			-s ${num_swap}
+		rm \$i
 	done
 	"""
 }
