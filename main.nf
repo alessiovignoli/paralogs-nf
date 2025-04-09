@@ -300,11 +300,11 @@ workflow swapped_data {
         // 2 sequences could be mislabeld (swapped) in 1 species, or in 2 species and so on
         // the following lines will take care of creating all possibilities for swap up to 10
         // this pair combination will take care of also being used as a key for a given swap "experiment"
-        //set_species_to_swap = channel.of(1, 2, 3, 4, 5, 6 ,7, 8, 9, 10)
-        //set_sequence_swap   = channel.of(2, 3, 4, 5, 6 ,7, 8, 9, 10)
-        //combination_keys    = set_species_to_swap.combine(set_sequence_swap)
+        set_species_to_swap = channel.of(1, 2, 3, 4, 5, 6 ,7, 8, 9, 10)
+        set_sequence_swap   = channel.of(2, 3, 4, 5, 6 ,7, 8, 9, 10)
+        combination_keys    = set_species_to_swap.combine(set_sequence_swap)
 
-        combination_keys = channel.of([1, 2], [10, 10])
+        //combination_keys = channel.of([1, 2], [5, 5], [10, 10])
 
         // create the input for the swapper function, for each family there will be 90 
         // possible swappping combinations. Each of wich has to randomly choose which species MSA to add swaps to
