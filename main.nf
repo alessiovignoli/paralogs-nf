@@ -89,7 +89,10 @@ include { superfine as superfine_emp_no_ref } from './modules/supermatrix_and_su
 
 // this is separated from the rest because it might be temporary work.
 // analysis of mislabeled paralogs
-include { swap_seq_in_fam } from './modules/supermatrix_and_supertree_sim.nf'
+include { swap_seq_in_fam } from './modules/supermatrix_and_supertree_swa.nf'
+include { from_fasta_to_phylip_swa } from './modules/supermatrix_and_supertree_swa.nf'
+include { run_phylo_ML_supertree_aln_swa } from './modules/supermatrix_and_supertree_swa.nf'
+include { run_phylo_ME_supertree_aln_swa } from './modules/supermatrix_and_supertree_swa.nf'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -304,8 +307,6 @@ workflow swapped_data {
         set_sequence_swap   = channel.of(2, 3, 4, 5, 6 ,7, 8, 9, 10)
         combination_keys    = set_species_to_swap.combine(set_sequence_swap)
 
-        //combination_keys = channel.of([1, 2], [5, 5], [10, 10])
-
         // create the input for the swapper function, for each family there will be 90 
         // possible swappping combinations. Each of wich has to randomly choose which species MSA to add swaps to
         to_be_swap = combination_keys.combine(
@@ -328,23 +329,21 @@ workflow swapped_data {
 
         //  SuperTree with all species and no shuffle. Done for computation of running time.
         // gets the list of MSAs form each family extracted above (one family at the time) and for each MSA it computes the (paralog) tree. Then thanks to superfine it merges all  this (25) trees into a singel (paralog) tree.
-        // the creation of the species paralogs happens in parallel for each of them (not a for loop). So first the above list is divided in family identifier + single species MSA.
-        msas_for_supertree = to_be_concatenated.transpose()
-        // then each msa is made into phylip format and then the species paralog tree is made either using ME or ML.
-        from_fasta_to_phylip_sim(msas_for_supertree)
-        run_phylo_ML_supertree_aln_sim(from_fasta_to_phylip_sim.out.phylip)
-        run_phylo_ME_supertree_aln_sim(from_fasta_to_phylip_sim.out.phylip)
-        // now put toghther all ML trees coming from the same family, do the same for ME. Then merge the two channles
-        tobe_merged_supertree_ML = run_phylo_ML_supertree_aln_sim.out.ml_bestree.map{
+        // the creation of the species paralogs happens in a for loop (all species in same family together).  
+        // each msa is made into phylip format and then the species paralog tree is made either using ME or ML.
+        from_fasta_to_phylip_swa(to_be_concatenated) 
+        run_phylo_ML_supertree_aln_swa(from_fasta_to_phylip_swa.out.phylip)
+        run_phylo_ME_supertree_aln_swa(from_fasta_to_phylip_swa.out.phylip)
+        // now add a tag to the keyword to ML trees and ME. Then merge the two channles.
+        tobe_merged_supertree_ML = run_phylo_ML_supertree_aln_swa.out.ml_bestree.map{
                 it -> [(it[0] + " - ML"), it[1]]
-        }.groupTuple()
-        tobe_merged_supertree_ME = run_phylo_ME_supertree_aln_sim.out.me_bestree.map{
+        }
+        tobe_merged_supertree_ME = run_phylo_ME_supertree_aln_swa.out.me_bestree.map{
                 it -> [(it[0] + " - ME"), it[1]]
-        }.groupTuple()
+        }
         ready_for_superfine_supertree = tobe_merged_supertree_ML.concat(tobe_merged_supertree_ME)
         // finally merge together using superfine all paralog trees from the same family.
         superfine_supertree_sim(ready_for_superfine_supertree)
-        
 
 }
 

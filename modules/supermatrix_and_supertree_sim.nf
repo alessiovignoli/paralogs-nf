@@ -190,36 +190,6 @@ process only_concatenate_aln_sim {
 }
 
 
-process swap_seq_in_fam {
-	label 'process_low'
-	tag "${fam}"
-	container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'docker://athbaltzis/paralogs:v0.10' :
-        'athbaltzis/paralogs:v0.10' }"
-
-
-	input:
-	tuple val(fam), val(num_species_swap), val(num_swap), path(all_aln)
-
-	output:
-	// also inputs file have to be outputted since the swaaped once are chosen at random as subset
-	tuple val(fam), val(num_species_swap), val(num_swap), path("*fasta_aln*", includeInputs : true), emit: swapped_fastas
-
-	script:
-	"""
-	# the simlynk to input file that has been modified needs to go 
-	# so that the output can be a set of (25) files (number of species) 
-	for i in \$(ls | sort -R | head -n ${num_species_swap}); do
-		fasta_sequence_swapper.py -i \$i \\
-			-o \$i.${num_species_swap}_${num_swap} \\
-			-n ${params.paralog_num_sim} \\
-			-s ${num_swap}
-		rm \$i
-	done
-	"""
-}
-
-
 // The following process will do the whole SuperMatrix and SuperTree computation. With 10 replication as well.
 // concatenate_aln.py  will do the following:
 // create all the MSA units and single units in phylip format. From the starting species alignments by shuffling and drowing columns.
