@@ -305,7 +305,9 @@ workflow swapped_data {
         // this pair combination will take care of also being used as a key for a given swap "experiment"
         set_species_to_swap = channel.of(1, 2, 3, 4, 5, 6 ,7, 8, 9, 10)
         set_sequence_swap   = channel.of(2, 3, 4, 5, 6 ,7, 8, 9, 10)
-        combination_keys    = set_species_to_swap.combine(set_sequence_swap)
+        almost_all_keys     = set_species_to_swap.combine(set_sequence_swap)
+	last_two_keys       = channel.of([20, 10], [25, 15])
+	combination_keys    = almost_all_keys.concat( last_two_keys )
 
         // create the input for the swapper function, for each family there will be 90 
         // possible swappping combinations. Each of wich has to randomly choose which species MSA to add swaps to
